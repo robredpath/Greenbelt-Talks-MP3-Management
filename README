@@ -1,7 +1,7 @@
-This is the order processing system for Greenbelt Festival.
+This is the order processing system for Greenbelt Festival's Talks Team.
 
 Inputs:-
-The list of talks for the festival - CVS file, parse_talks.plx
+The list of talks for the festival - CSV file, parse_talks.plx
 Individual orders for mp3s - Web page, orders.plx
 HQ mp3 files - Web page, upload_talk.plx
 
@@ -15,4 +15,13 @@ Overview pages
 - upload progress - uploads.plx
 Upload LQ mp3s to website - upload_queue_runner.sh
 Make repo of LQ mp3s available to duplication team - Samba share!
+
+Database:-
+- List of all talks
+- List of available talks
+- List of ordered talks
+- Upload queue
+- Currently running uploades
+- Transcode queue
+- Currently running transcodes
 
