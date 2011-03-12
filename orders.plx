@@ -22,32 +22,31 @@
 
 # Get available talks
 
-my %available_talks;
-my $available_talks ();
+my @available_talks;
 
-# TODO: Populate %available_talks from db
+# TODO: Populate @available_talks from db
 
 # Get current unfulfilled orders
 
-my %saved_orders; # check that a hash is actually what we want, and that this is actually how we create it
-my $saved_orders = ();
+my %saved_orders; 
 
-# TODO: populate saved_orders from db
+# TODO: populate %saved_orders from db - key = ID, value = array of talks
 
 # Calculate fulfillable orders
 
 my @f_orders; # f_orders = fulfillable orders. Just hard to spell consistently!
 
-foreach($saved_orders)
+foreach(keys %saved_orders)
 {
-	my $talk_can_be_fulfilled = TRUE; #Assume that an order can be fulfilled until proved otherwise
-	foreach($_->{talks})
+	my $order_can_be_fulfilled = TRUE; #Assume that an order can be fulfilled until proved otherwise
+	foreach(@saved_orders->{$_}) # $_ is an array
 	{
-		#if the talk id is present in available_talks, do nothing, otherwise set $talk_can_be_fulfilled to false and break (if poss) 
+		$order_can_be_fulfilled = FALSE unless grep($_, @available_talks);
+		last unless $order_can_be_fulfilled; 
 	}
-	if($talk_can_be_fulfilled)
+	if($order_can_be_fulfilled)
 	{
-		push @f_orders $_->{id} #no idea if this is the correct syntax!
+		push @f_orders, %saved_orders->{$_};
 	}
 	
 }
