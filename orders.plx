@@ -1,4 +1,6 @@
 #!/usr/bin/perl
+use strict;
+use warnings;
 
 #************************************************************************
 # orders.plx
@@ -16,21 +18,72 @@
 # mark them as such
 #************************************************************************
 
-# Set up variables, do all the processing
+use CGI;
+use DBI;
+
+# Set up variables, do initial processing
+
+my $sth;
+
+my $dsn;
+my $db_user;
+my $db_password;
+
+my $dbh = DBI−>connect($dsn, $db_user, $db_password,
+                             { RaiseError => 1, AutoCommit => 1 });
+
+# Get all talks
+my @talks;
+$sth = $dbh->prepare("SELECT `id` FROM `talks`");
+$sth->execute();
+while (my @data = $sth->fetchrow_array)
+{
+ push @talks, @data[0];
+}
+
+# Get available talks
+my @available_talks;
+$sql = "SELECT `id` from `talks` where `available`=1";
+# execute SQL, assign values
+
 
 # Get POST data
 
-# Get available talks
+my $post_data = new CGI;
+my %new_order;
+my $order_is_viable;
+if(exists $post_data->param('order_id'))
+{
+	# TODO: sanitise data first!
+	$new_order->{'id'}=$post_data->param('order_id');
+	@new_order->{'order_items'}=split(" ",$post_data->param('order_items'));
+	# check that order is viable - no invalid data
+	foreach(@new_order->{'order_items'})
+	{
+		
+	}
+	# add order ID into orders table
+	$sql = "INSERT INTO `orders`(`id`) VALUES ('$new_order->{'id'}')";
+	# execute SQL
+	# add items into order_items table
+	foreach(@new_order->{'order_items'})
+	{
+		$sql = "INSERT INTO `order_items`(`order_id`,`talk_id`) VALUES ('$new_order->{'id'}','$_'); 
+		#execute SQL
+	}
+}
 
-my @available_talks;
-
-# TODO: Populate @available_talks from db
 
 # Get current unfulfilled orders
-
 my %saved_orders; 
-
-# TODO: populate %saved_orders from db - key = ID, value = array of talks
+$sql = "SELECT `id` FROM `orders`";
+my @orders; # intialise with returned resultset
+my @order;
+foreach(@orders)
+{
+	$sql = "SELECT `talk_id` FROM `order_items` WHERE `order_id`='$_'"
+	%saved_orders->{$_} = @order;
+}
 
 # Calculate fulfillable orders
 
@@ -75,7 +128,7 @@ $output_html .= <<END;
 <form method="post">
 <h2>New Order</h2>
 <p>Order ID<input type="text" id="order_id"></p>
-<p>Talks(comma separate list, without 'gb11-')<textarea id="order_items"></p>
+<p>Talks(comma separate list, with gb11 (or other year prefix))<textarea id="order_items"></p>
 </form>
 </div>
 

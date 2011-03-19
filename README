@@ -14,14 +14,39 @@ Overview pages
 - filesystem status - files.plx
 - upload progress - uploads.plx
 Upload LQ mp3s to website - upload_queue_runner.sh
-Make repo of LQ mp3s available to duplication team - Samba share!
+Make repo of LQ mp3s available to duplication team - download from local website
 
-Database:-
-- List of all talks
-- List of available talks
-- List of ordered talks
-- Upload queue
-- Currently running uploades
-- Transcode queue
-- Currently running transcodes
+State reporting
+- Use process name to communicate state - include talk ID
+
+DB overview:-
+
+TABLE `talks` 
+	`id` int(3) PRIMARY KEY
+	`year` int(2)
+	`speaker` varchar(255)
+	`title` varchar(255)
+	`available` bool
+
+TABLE `orders`
+	`id` int(3) PRIMARY KEY
+
+TABLE `order_items`
+	`order_id` int(3) MUL PRIMARY KEY
+	`talk_id` int(3) MUL PRIMARY KEY
+
+TABLE `upload_queue`
+	`sequence` int(3)
+	`priority` int(1) 
+	`talk_id` PRIMARY KEY
+
+TABLE `transcode_queue`
+        `sequence` int(3) 
+        `priority` int(1) 
+        `talk_id` PRIMARY KEY
+
+	
+
+
+
 
