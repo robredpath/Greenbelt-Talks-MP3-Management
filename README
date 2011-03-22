@@ -1,5 +1,7 @@
 This is the order processing system for Greenbelt Festival's Talks Team.
 
+Installation:- Copy gb_talks.conf to /etc and make it readable by the appropriate users. We recommend that these scripts be executed as as reduced-priviledge user. 
+
 Inputs:-
 The list of talks for the festival - CSV file, parse_talks.plx
 Individual orders for mp3s - Web page, orders.plx
