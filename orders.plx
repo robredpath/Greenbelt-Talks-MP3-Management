@@ -38,7 +38,7 @@ $sth = $dbh->prepare("SELECT `id` FROM `talks`");
 $sth->execute();
 while (my @data = $sth->fetchrow_array)
 {
- push @talks, @data[0];
+	push @talks, @data[0];
 }
 
 # Get available talks
