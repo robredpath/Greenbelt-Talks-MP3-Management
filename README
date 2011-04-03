@@ -25,6 +25,7 @@ Logging
 - Upload queue runner log - queue_runner.log
 - Transcode queue runner log - transcode.log
 
+
 DB overview:-
 
 TABLE `talks` 
