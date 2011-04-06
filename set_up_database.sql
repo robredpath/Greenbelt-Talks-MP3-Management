@@ -10,22 +10,16 @@ CREATE TABLE `orders` (
 `id` INT(3) PRIMARY KEY NOT NULL );
 ENGINE = InnoDB;
 
-CREATE TABLE `order_items` (
-`order_id` INT(3) NOT NULL PRIMARY KEY,
-`talk_id` INT(3) NOT NULL,
-CONSTRAINT `unique_order_items`
-	UNIQUE KEY `unique_order_items` (`order_id`,`talk_id`),
-CONSTRAINT `fk_order_items_orders` 
-	FOREIGN KEY `fk_order_items_orders`(`order_id`)
-	REFERENCES `orders`(`id`) 
-	ON DELETE NO ACTION 
-	ON UPDATE NO ACTION,
-CONSTRAINT `fk_order_items_talks` 
-        FOREIGN KEY `fk_order_items_talks`(`talk_id`)
-        REFERENCES `talks`(`id`) 
-        ON DELETE NO ACTION 
-        ON UPDATE NO ACTION)
-ENGINE = InnoDB;
+CREATE TABLE  `order_items` (
+ `order_id` INT( 3 ) NOT NULL ,
+ `talk_id` INT( 3 ) NOT NULL ,
+CONSTRAINT  `pk_order_items` 
+	PRIMARY KEY  `pk_order_items` (  `order_id` ,  `talk_id` ) ,
+CONSTRAINT  `fk_order_items_talks` 
+	FOREIGN KEY  `fk_order_items_talks` (  `talk_id` ) 
+	REFERENCES  `talks` (  `id` ) 
+	ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE = INNODB;
 
 CREATE TABLE `upload_queue` (
 `sequence` INT(3) PRIMARY KEY NOT NULL,
