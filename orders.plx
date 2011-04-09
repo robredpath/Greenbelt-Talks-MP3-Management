@@ -21,34 +21,7 @@ use warnings;
 use CGI;
 use DBI;
 
-# Get conf
-
-open CONF, "../gb_talks.conf" or die $!;
-my $conf = {};
-while(<CONF>)
-{
-        my @conf_line = split(/=/,$_);
-        chomp $conf_line[1];
-        $conf->{$conf_line[0]} = $conf_line[1];
-}
-
-
-
-# Set up variables, do initial processing
-
-my $sth;
-
-my $db_name = $conf->{'mysql_db'};
-my $db_host = $conf->{'mysql_host'};
-my $db_port = $conf->{'mysql_port'};
-
-my $dsn = "dbi:mysql:$db_name:$db_host:$db_port";
-my $db_user = $conf->{'mysql_user'};
-my $db_password =  $conf->{'mysql_pass'};
-
-my $dbh = DBI->connect($dsn, $db_user, $db_password, { RaiseError => 1, AutoCommit => 1 });
-
-
+use environ;
 
 # Get all talks
 my @talks;
@@ -56,7 +29,7 @@ $sth = $dbh->prepare("SELECT `id` FROM `talks`");
 $sth->execute();
 while (my @data = $sth->fetchrow_array)
 {
-	push @talks, @data[0];
+	push @talks, $data[0];
 }
 
 # Get available talks
@@ -68,15 +41,15 @@ $sql = "SELECT `id` from `talks` where `available`=1";
 # Get POST data
 
 my $post_data = new CGI;
-my %new_order;
+my $new_order = { };
 my $order_is_viable;
-if(exists $post_data->param('order_id'))
+if($post_data->param('order_id'))
 {
 	# TODO: sanitise data first!
 	$new_order->{'id'}=$post_data->param('order_id');
-	@new_order->{'order_items'}=split(" ",$post_data->param('order_items'));
+	$new_order->{'order_items'}=split(" ",$post_data->param('order_items'));
 	# check that order is viable - no invalid data
-	foreach(@new_order->{'order_items'})
+	foreach($new_order->{'order_items'})
 	{
 		
 	}
@@ -84,47 +57,47 @@ if(exists $post_data->param('order_id'))
 	$sql = "INSERT INTO `orders`(`id`) VALUES ('$new_order->{'id'}')";
 	# execute SQL
 	# add items into order_items table
-	foreach(@new_order->{'order_items'})
+	foreach($new_order->{'order_items'})
 	{
-		$sql = "INSERT INTO `order_items`(`order_id`,`talk_id`) VALUES ('$new_order->{'id'}','$_'); 
-		#execute SQL
+		$sql = "INSERT INTO `order_items`(`order_id`,`talk_id`) VALUES ('$new_order->{'id'}','$_')"; 
+		# execute SQL
 	}
 }
 
 
 # Get current unfulfilled orders
-my %saved_orders; 
+my $saved_orders = { }; 
 $sql = "SELECT `id` FROM `orders`";
 my @orders; # intialise with returned resultset
 my @order;
 foreach(@orders)
 {
-	$sql = "SELECT `talk_id` FROM `order_items` WHERE `order_id`='$_'"
-	%saved_orders->{$_} = @order;
+	$sql = "SELECT `talk_id` FROM `order_items` WHERE `order_id`='$_'";
+	$saved_orders->{$_} = @order;
 }
 
 # Calculate fulfillable orders
 
 my @f_orders; # f_orders = fulfillable orders. Just hard to spell consistently!
 
-foreach(keys %saved_orders)
+foreach(keys %$saved_orders)
 {
-	my $order_can_be_fulfilled = TRUE; #Assume that an order can be fulfilled until proved otherwise
-	foreach(@saved_orders->{$_}) # $_ is an array
+	my $order_can_be_fulfilled = 0; # 0 = false. anything else is true. Assume that an order can be fulfilled until proved otherwise
+	foreach($saved_orders->{$_}) # $_ is an array
 	{
-		$order_can_be_fulfilled = FALSE unless grep($_, @available_talks);
+		$order_can_be_fulfilled = 1 unless grep($_, @available_talks);
 		last unless $order_can_be_fulfilled; 
 	}
 	if($order_can_be_fulfilled)
 	{
-		push @f_orders, %saved_orders->{$_};
+		push @f_orders, $saved_orders->{$_};
 	}
 	
 }
 
 # Set up the HTML header
 
-$output_html = <<END;
+my $output_html = <<END;
 
 <html>
 <body>
@@ -163,10 +136,10 @@ $output_html .= <<END;
 <th><td>Order ID</td><td>Talks in Order</td><td>Completed?</td></th>
 END
 
-foreach($f_orders)
+foreach(@f_orders)
 {
 	#check to see if we can complete the order, if we can then
-	$output_html .= "<tr><td>$order_id</td><td>%order_items</td><td><input type='checkbox' name='order_$order_id_complete'></td></tr>"; 
+	$output_html .= "<tr><td>\$order_id</td><td>\@order_items</td><td><input type='checkbox' name='order_\$order_id_complete'></td></tr>"; 
 }
 
 
@@ -180,18 +153,19 @@ END
 
 # Output list of all talks currently available
 
-$output_html .= <<END
+$output_html .= <<END;
 
 <div id="available_talks">
 
 END
 
+my $available_talks;
 foreach($available_talks)
 {
 	
 }
 
-$output_html .= <<END
+$output_html .= <<END;
 
 </div>
 
@@ -200,7 +174,7 @@ END
 
 # Output details of all unfulfilled orders
 
-$output_html .= <<END
+$output_html .= <<END;
 
 <div id="saved_orders">
 <h2>Pending Orders</h2>
@@ -213,7 +187,7 @@ foreach($saved_orders)
 
 }
 
-$output_html .= <<END
+$output_html .= <<END;
 </table>
 </div>
 
