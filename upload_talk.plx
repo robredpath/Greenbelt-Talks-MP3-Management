@@ -1,4 +1,7 @@
 #!/usr/bin/perl -T
+
+BEGIN { push @INC, "."; }
+
 use strict;
 use warnings;
 
@@ -26,7 +29,7 @@ use File::Basename;
 $CGI::POST_MAX = 1024 * 512000; # 500MB should be enough for what we're doing!
 my $upload_dir = "./gb_talks_upload";
 
-#use environ;
+use environ;
 
 my $status_message = "Select a file to upload below";
 
@@ -35,14 +38,20 @@ my $post_data = new CGI;
 my $uploaded_talk = { };
 my $talk_is_complete;
 
+my $talk_id;
+
 if ($post_data->param('talk_id') && $post_data->upload('talk_data'))
 {
-my $talk_id = $post_data->param('talk_id') unless $post_data->param('talk_id') =~ /[0-9]*/;
+	$talk_id = $post_data->param('talk_id');
+	$talk_id =~ /([0-9]{1,3})/;
+	$talk_id = $1;
+}
+
 my $talk_data = $post_data->upload('talk_data');
 
 # Open file for writing with appropriate name
 
-open TALK, ">gb11-$talk_id.mp3";
+open TALK, ">$upload_dir/gb11-$talk_id.mp3";
 
 # Write file
 
@@ -61,8 +70,12 @@ close TALK;
 #my $md5sum = `md5sum gb11-$talk_id.mp3`;
 
 # Write data to database - md5sum and acknowledge upload
+
+$environ::sth = $environ::dbh->prepare("INSERT INTO transcode_queue(`talk_id`) VALUES ('?')");
+
+
 # email contact to confirm availability (get contact from conf file)
-}
+
 
 #Set up header
 my $output_html = <<END;
@@ -76,9 +89,9 @@ Greenbelt Talks - Upload New Talk
 <div id="status_message">$status_message </div>
 <div id="upload_form">
 <form action="upload_talk.plx" method="POST" enctype="multipart/form-data">
-mp3: :<input type="file" id="talk_data" />
-Talk ID:<input type="text" id="talk_id" />
-<input type="submit" />
+mp3: :<input type="file" id="talk_data" name="talk_data"/>
+Talk ID:<input type="text" id="talk_id" name="talk_id"/>
+<input type="submit" value="Upload Talk" name="submit"/>
 </form>
 </div>
 

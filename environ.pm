@@ -1,5 +1,7 @@
 # Get conf
 
+use DBI;
+
 open CONF, "../gb_talks.conf" or die $!;
 my $conf = {};
 while(<CONF>)
