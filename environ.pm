@@ -25,4 +25,4 @@ my $dsn = "dbi:mysql:$db_name:$db_host:$db_port";
 my $db_user = $conf->{'mysql_user'};
 my $db_password =  $conf->{'mysql_pass'};
 
-my $dbh = DBI->connect($dsn, $db_user, $db_password, { RaiseError => 1, AutoCommit => 1 });
+our $dbh = DBI->connect($dsn, $db_user, $db_password, { RaiseError => 1, AutoCommit => 1 });

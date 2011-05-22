@@ -25,11 +25,14 @@ use warnings;
 use CGI;
 use CGI::Carp qw ( fatalsToBrowser ); 
 use File::Basename;
+use DBI;
+
 
 $CGI::POST_MAX = 1024 * 512000; # 500MB should be enough for what we're doing!
 my $upload_dir = "./gb_talks_upload";
 
-use environ;
+require "./environ.pm";
+our $dbh;
 
 my $status_message = "Select a file to upload below";
 
@@ -69,10 +72,10 @@ close TALK;
 
 #my $md5sum = `md5sum gb11-$talk_id.mp3`;
 
-# Write data to database - md5sum and acknowledge upload
+# Write add to transcode queue - md5sum and acknowledge upload
 
-$environ::sth = $environ::dbh->prepare("INSERT INTO transcode_queue(`talk_id`) VALUES ('?')");
-
+my $sth = $dbh->prepare("INSERT INTO transcode_queue(`talk_id`) VALUES ('$talk_id')");
+my $rv = $sth->execute();
 
 # email contact to confirm availability (get contact from conf file)
 

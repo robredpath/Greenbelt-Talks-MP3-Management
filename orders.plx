@@ -19,9 +19,14 @@ use warnings;
 #************************************************************************
 
 use CGI;
+use CGI::Carp qw ( fatalsToBrowser );
 use DBI;
 
-use environ;
+require "./environ.pm";
+our $dbh;
+my $sth;
+my $rv;
+my $sql;
 
 # Get all talks
 my @talks;
@@ -34,8 +39,12 @@ while (my @data = $sth->fetchrow_array)
 
 # Get available talks
 my @available_talks;
-$sql = "SELECT `id` from `talks` where `available`=1";
-# execute SQL, assign values
+$sth = $dbh->prepare("SELECT `id` from `talks` where `available`=1");
+$sth->execute();
+while (my @data = $sth->fetchrow_array)
+{
+        push @available_talks, $data[0];
+}
 
 
 # Get POST data
@@ -54,25 +63,36 @@ if($post_data->param('order_id'))
 		
 	}
 	# add order ID into orders table
-	$sql = "INSERT INTO `orders`(`id`) VALUES ('$new_order->{'id'}')";
-	# execute SQL
+	$sth = $dbh->prepare("INSERT INTO `orders`(`id`) VALUES ('$new_order->{'id'}')");
+	$sth->execute();
 	# add items into order_items table
 	foreach($new_order->{'order_items'})
 	{
-		$sql = "INSERT INTO `order_items`(`order_id`,`talk_id`) VALUES ('$new_order->{'id'}','$_')"; 
-		# execute SQL
+		$sth = $dbh->prepare("INSERT INTO `order_items`(`order_id`,`talk_id`) VALUES ('?','?')"); 
+		$rv = $sth->execute($new_order->{'id'}, $_);
 	}
 }
 
 
 # Get current unfulfilled orders
 my $saved_orders = { }; 
-$sql = "SELECT `id` FROM `orders`";
-my @orders; # intialise with returned resultset
-my @order;
+$sth = $dbh->prepare("SELECT `id` FROM `orders`");
+$sth->execute();
+my @orders;
+while (my @data = $sth->fetchrow_array)
+{
+        push @orders, $data[0];
+}
+
 foreach(@orders)
 {
-	$sql = "SELECT `talk_id` FROM `order_items` WHERE `order_id`='$_'";
+	my @order;
+	$sth = $dbh->prepare("SELECT `talk_id` FROM `order_items` WHERE `order_id`='$_'");
+	$sth->execute;
+	while (my @data = $sth->fetchrow_array)
+	{ 
+		push @order, @data[0];
+	}
 	$saved_orders->{$_} = @order;
 }
 
@@ -119,7 +139,7 @@ $output_html .= <<END;
 <form method="post">
 <h2>New Order</h2>
 <p>Order ID<input type="text" id="order_id"></p>
-<p>Talks(comma separate list, with gb11 (or other year prefix))<textarea id="order_items"></p>
+<p>Talks(comma separate list, with gb11 (or other year prefix))<textarea id="order_items"></textarea></p>
 </form>
 </div>
 
@@ -204,4 +224,4 @@ END
 
 #Output page
 
-print $output_html;
+print $post_data->header, $output_html;

@@ -1,3 +1,7 @@
+DROP DATABASE `gb_talks`;
+CREATE DATABASE `gb_talks`;
+USE `gb_talks`;
+
 CREATE TABLE `talks` (
 `id` INT(3) PRIMARY KEY NOT NULL,
 `year` INT(2) NOT NULL,
@@ -7,7 +11,7 @@ CREATE TABLE `talks` (
 ENGINE = InnoDB;
 
 CREATE TABLE `orders` (
-`id` INT(3) PRIMARY KEY NOT NULL );
+`id` INT(3) PRIMARY KEY NOT NULL )
 ENGINE = InnoDB;
 
 CREATE TABLE  `order_items` (
