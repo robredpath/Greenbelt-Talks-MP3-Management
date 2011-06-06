@@ -21,12 +21,15 @@ use warnings;
 use CGI;
 use CGI::Carp qw ( fatalsToBrowser );
 use DBI;
+use Data::Dumper;
 
 require "./environ.pm";
 our $dbh;
 my $sth;
 my $rv;
 my $sql;
+my @debug_messages;
+my @error_messages;
 
 # Get all talks
 my @talks;
@@ -49,14 +52,17 @@ while (my @data = $sth->fetchrow_array)
 
 # Get POST data
 
-my $post_data = new CGI;
+my $post_data = CGI->new;
 my $new_order = { };
 my $order_is_viable;
 if($post_data->param('order_id'))
 {
+	push @debug_messages, "POST data";
+	push @debug_messages, Dumper($post_data);
 	# TODO: sanitise data first!
 	$new_order->{'id'}=$post_data->param('order_id');
-	$new_order->{'order_items'}=split(" ",$post_data->param('order_items'));
+	my @order_items = split(" ",$post_data->param('order_items'));
+	$new_order->{'order_items'} = \@order_items;
 	# check that order is viable - no invalid data
 	foreach($new_order->{'order_items'})
 	{
@@ -66,9 +72,9 @@ if($post_data->param('order_id'))
 	$sth = $dbh->prepare("INSERT INTO `orders`(`id`) VALUES ('$new_order->{'id'}')");
 	$sth->execute();
 	# add items into order_items table
-	foreach($new_order->{'order_items'})
+	foreach(@order_items)
 	{
-		$sth = $dbh->prepare("INSERT INTO `order_items`(`order_id`,`talk_id`) VALUES ('?','?')"); 
+		$sth = $dbh->prepare("INSERT INTO `order_items`(`order_id`,`talk_id`) VALUES (?,?)"); 
 		$rv = $sth->execute($new_order->{'id'}, $_);
 	}
 }
@@ -130,7 +136,61 @@ my $output_html = <<END;
 </div>
 END
 
+# Output any debug messages
+
+$output_html .= <<END;
+
+<div id ="debug">
+
+<h2>Debug messages</h2>
+END
+
+foreach(@debug_messages)
+{
+
+	$output_html .= "<p>" . $_ . "</p>";
+
+}
+$output_html .= <<END;
+
+</div>
+
+END
+
 # Was there any POST data? If so, output confirmation that the order has been saved
+
+
+
+if($post_data)
+{
+
+$output_html .= <<END;
+
+<div id="confirmation">
+<h2>Results</h2>
+END
+
+	if(@error_messages)
+	{
+		$output_html .= "An error was encountered whilst processing the request:";
+		foreach(@error_messages)
+		{
+			$output_html .= "<p>" . $_ . "</p>";
+		}
+	}
+	else
+	{
+		$output_html .= "Your request has been successfully processed";
+	}
+
+$output_html .= <<END;
+
+</div>
+
+END
+
+
+}
 
 # Form for adding a new order - order ID, order items as a comma-separated list. 
 $output_html .= <<END;
@@ -138,8 +198,9 @@ $output_html .= <<END;
 <div id="new_order_form">
 <form method="post">
 <h2>New Order</h2>
-<p>Order ID<input type="text" id="order_id"></p>
-<p>Talks(comma separate list, with gb11 (or other year prefix))<textarea id="order_items"></textarea></p>
+<p>Order ID<input type="text" name="order_id"></p>
+<p>Talks(comma separate list, with gb11 (or other year prefix))<textarea id="order_items" name="order_items"></textarea></p>
+<p><input type="submit"/></p>
 </form>
 </div>
 
@@ -149,7 +210,7 @@ END
 
 # Header
 $output_html .= <<END;
-
+<h2>Fulfillable Orders</h2>
 <div id="orders_ready">
 <form method="post">
 <table>
@@ -202,9 +263,9 @@ $output_html .= <<END;
 <th><td>Order ID</td><td>Talks in Order</td></th>
 END
 
-foreach($saved_orders)
+foreach(@orders)
 {
-
+        $output_html .= "<tr><td>\$order_id</td><td>\@order_items</td><td><input type='checkbox' name='order_\$order_id_complete'></td></tr>";
 }
 
 $output_html .= <<END;
