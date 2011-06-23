@@ -41,12 +41,12 @@ while (my @data = $sth->fetchrow_array)
 }
 
 # Get available talks
-my @available_talks;
+my %available_talks;
 $sth = $dbh->prepare("SELECT `id` from `talks` where `available`=1");
 $sth->execute();
 while (my @data = $sth->fetchrow_array)
 {
-        push @available_talks, $data[0];
+        %available_talks->{@data[0]}++;
 }
 
 
@@ -79,10 +79,23 @@ if($post_data->param('order_id'))
 	}
 }
 
+if($post_data->param('order_complete'))
+{
+	push @debug_messages, "POST data";
+        push @debug_messages, Dumper($post_data);
+        # TODO: sanitise data first!
+	# Mark order complete in database
+	my @completed_orders = $post_data->param('order_complete');
+	foreach(@completed_orders)
+	{
+		$sth = $dbh->prepare("UPDATE `orders` SET `complete`=1 WHERE id=?");
+		$rv = $sth->execute($_);
+	}	
+}
 
-# Get current unfulfilled orders
+# Get all incomplete orders
 my $saved_orders = { }; 
-$sth = $dbh->prepare("SELECT `id` FROM `orders`");
+$sth = $dbh->prepare("SELECT `id` FROM `orders` WHERE `complete`=0");
 $sth->execute();
 my @orders;
 while (my @data = $sth->fetchrow_array)
@@ -90,33 +103,35 @@ while (my @data = $sth->fetchrow_array)
         push @orders, $data[0];
 }
 
+#Get the contents of each order
 foreach(@orders)
 {
 	my @order;
-	$sth = $dbh->prepare("SELECT `talk_id` FROM `order_items` WHERE `order_id`='$_'");
-	$sth->execute;
+	$sth = $dbh->prepare("SELECT `talk_id` FROM `order_items` WHERE `order_id`= ?");
+	$sth->execute($_);
 	while (my @data = $sth->fetchrow_array)
 	{ 
-		push @order, @data[0];
+		push @order, $data[0];
 	}
-	$saved_orders->{$_} = @order;
+	$saved_orders->{$_} = \@order;
 }
 
-# Calculate fulfillable orders
+# Calculate fulfillable orders by iterating over the available talks list for each item on the order. If any returns false, stop trying and return an error. If none return false, assume success. 
 
-my @f_orders; # f_orders = fulfillable orders. Just hard to spell consistently!
+my %f_orders; # f_orders = fulfillable orders. Just hard to spell consistently!
 
 foreach(keys %$saved_orders)
 {
-	my $order_can_be_fulfilled = 0; # 0 = false. anything else is true. Assume that an order can be fulfilled until proved otherwise
-	foreach($saved_orders->{$_}) # $_ is an array
+	my $order_can_be_fulfilled = 1; # Assume that the order can be fulfilled
+	foreach(@{$saved_orders->{$_}}) # should be an arrayref
 	{
-		$order_can_be_fulfilled = 1 unless grep($_, @available_talks);
+		push @debug_messages, $_, %available_talks->{$_};
+		$order_can_be_fulfilled = 0 unless %available_talks->{$_};
 		last unless $order_can_be_fulfilled; 
 	}
 	if($order_can_be_fulfilled)
 	{
-		push @f_orders, $saved_orders->{$_};
+		%f_orders->{$_}++;
 	}
 	
 }
@@ -157,11 +172,9 @@ $output_html .= <<END;
 
 END
 
-# Was there any POST data? If so, output confirmation that the order has been saved
+# Was there any POST data? If so, output confirmation that the request has been processed
 
-
-
-if($post_data)
+if($post_data->param('order_id'))
 {
 
 $output_html .= <<END;
@@ -192,62 +205,37 @@ END
 
 }
 
-# Form for adding a new order - order ID, order items as a comma-separated list. 
+# Form for adding a new order - order ID, order items as a space-separated list. 
 $output_html .= <<END;
 
 <div id="new_order_form">
 <form method="post">
 <h2>New Order</h2>
 <p>Order ID<input type="text" name="order_id"></p>
-<p>Talks(comma separate list, with gb11 (or other year prefix))<textarea id="order_items" name="order_items"></textarea></p>
+<p>Talks(list of talk IDs, separated by spaces, with gb11 (or other year prefix))<textarea id="order_items" name="order_items"></textarea></p>
 <p><input type="submit"/></p>
 </form>
 </div>
 
 END
 
-# List of orders that can currently be fulfilled, with button to mark each as fulfilled
-
-# Header
-$output_html .= <<END;
-<h2>Fulfillable Orders</h2>
-<div id="orders_ready">
-<form method="post">
-<table>
-<th><td>Order ID</td><td>Talks in Order</td><td>Completed?</td></th>
-END
-
-foreach(@f_orders)
-{
-	#check to see if we can complete the order, if we can then
-	$output_html .= "<tr><td>\$order_id</td><td>\@order_items</td><td><input type='checkbox' name='order_\$order_id_complete'></td></tr>"; 
-}
-
-
-$output_html .= <<END;
-<tr><td>&nbsp;</td><td>&nbsp;</td><td><input type="submit" value="Mark Orders Completed" /></td></tr>
-</table>
-</form>
-</div>
-
-END
 
 # Output list of all talks currently available
 
 $output_html .= <<END;
 
 <div id="available_talks">
-
+<h2>Available Talks</h2>
+<p>
 END
 
-my $available_talks;
-foreach($available_talks)
+foreach(keys %available_talks)
 {
-	
+	$output_html .= "$_ "
 }
 
 $output_html .= <<END;
-
+</p>
 </div>
 
 END
@@ -259,21 +247,63 @@ $output_html .= <<END;
 
 <div id="saved_orders">
 <h2>Pending Orders</h2>
+<form method="POST">
 <table>
-<th><td>Order ID</td><td>Talks in Order</td></th>
+<tr><td>Order ID</td><td>Talks in Order</td><td>F?</td><td>Complete?</td></tr>
 END
 
-foreach(@orders)
+foreach(keys %$saved_orders)
 {
-        $output_html .= "<tr><td>\$order_id</td><td>\@order_items</td><td><input type='checkbox' name='order_\$order_id_complete'></td></tr>";
+	next unless %f_orders->{$_};
+	push @debug_messages, Dumper($_);
+        $output_html .= "<tr><td>$_</td><td>";
+	foreach(@{$saved_orders->{$_}})
+	{
+		$output_html .= "$_ ";
+	}
+	$output_html .= "</td><td>F</td><td><input type='checkbox' name='order_complete' value='$_'></td></tr>";
+}
+
+foreach(keys %$saved_orders)
+{
+        next if %f_orders->{$_};
+        push @debug_messages, Dumper($_);
+        $output_html .= "<tr><td>$_</td><td>";
+        foreach(@{$saved_orders->{$_}})
+        {
+                $output_html .= "$_ ";
+        }
+        $output_html .= "</td><td> </td><td><input type='checkbox' name='order_complete' value='$_'></td></tr>";
 }
 
 $output_html .= <<END;
 </table>
+<input type="submit" value="Mark orders as complete" />
+</form>
 </div>
 
 END
 
+# Output debug messages again, for any errors during HTML generation
+
+$output_html .= <<END;
+
+<div id ="debug">
+
+<h2>Debug messages</h2>
+END
+
+foreach(@debug_messages)
+{
+
+        $output_html .= "<p>" . $_ . "</p>";
+
+}
+$output_html .= <<END;
+
+</div>
+
+END
 
 # And the footer, just in case there's anything that needs to go here
 
