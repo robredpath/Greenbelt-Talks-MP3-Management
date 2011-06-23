@@ -26,10 +26,13 @@ use CGI;
 use CGI::Carp qw ( fatalsToBrowser ); 
 use File::Basename;
 use DBI;
+use Cwd qw/abs_path/;
+use Digest::MD5::File;
 
-
-$CGI::POST_MAX = 1024 * 512000; # 500MB should be enough for what we're doing!
+$CGI::POST_MAX = 1024 * 512000; # 512MB should be enough for what we're doing!
+#my $cwd = cwd();
 my $upload_dir = "./gb_talks_upload";
+
 
 require "./environ.pm";
 our $dbh;
@@ -40,45 +43,46 @@ my $status_message = "Select a file to upload below";
 my $post_data = new CGI;
 my $uploaded_talk = { };
 my $talk_is_complete;
-
 my $talk_id;
+
+if (! -e $upload_dir)
+{
+	warn ("Uploads directory does not exist - attempting to create");
+	mkdir $upload_dir or warn $!;
+}
 
 if ($post_data->param('talk_id') && $post_data->upload('talk_data'))
 {
-	$talk_id = $post_data->param('talk_id');
-	$talk_id =~ /([0-9]{1,3})/;
-	$talk_id = $1;
+	$talk_id = $1 if $post_data->param('talk_id')  =~ /([0-9]+)/;
+	my $talk_data = $post_data->upload('talk_data');
+
+	# Open file for writing with appropriate name
+	warn "$upload_dir/gb11-$talk_id.mp3";
+	open TALK, ">$upload_dir/gb11-$talk_id.mp3" or warn $!;
+
+	# Write file
+
+	binmode TALK;
+	while ( <$talk_data> ) 
+	{	 
+		print TALK; 
+	}
+
+	# Close file
+
+	close TALK;
+
+	# md5sum the file
+
+	my $md5sum = file_md5("$upload_dir/gb11-$talk_id.mp3");
+
+	# Write add to transcode queue - md5sum and acknowledge upload
+	warn($talk_id);
+	my $sth = $dbh->prepare("INSERT INTO transcode_queue(`sequence`,`priority`,`talk_id`) VALUES (NULL,5,?)");
+	my $rv = $sth->execute($talk_id);
+
+	# email contact to confirm availability (get contact from conf file)
 }
-
-my $talk_data = $post_data->upload('talk_data');
-
-# Open file for writing with appropriate name
-
-open TALK, ">$upload_dir/gb11-$talk_id.mp3";
-
-# Write file
-
-binmode TALK;
-while ( <$talk_data> ) 
-{ 
-	print TALK; 
-}
-
-# Close file
-
-close TALK;
-
-# md5sum the file
-
-#my $md5sum = `md5sum gb11-$talk_id.mp3`;
-
-# Write add to transcode queue - md5sum and acknowledge upload
-
-my $sth = $dbh->prepare("INSERT INTO transcode_queue(`talk_id`) VALUES ('$talk_id')");
-my $rv = $sth->execute();
-
-# email contact to confirm availability (get contact from conf file)
-
 
 #Set up header
 my $output_html = <<END;

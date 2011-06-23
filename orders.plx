@@ -57,8 +57,6 @@ my $new_order = { };
 my $order_is_viable;
 if($post_data->param('order_id'))
 {
-	push @debug_messages, "POST data";
-	push @debug_messages, Dumper($post_data);
 	# TODO: sanitise data first!
 	$new_order->{'id'}=$post_data->param('order_id');
 	my @order_items = split(" ",$post_data->param('order_items'));
@@ -81,8 +79,6 @@ if($post_data->param('order_id'))
 
 if($post_data->param('order_complete'))
 {
-	push @debug_messages, "POST data";
-        push @debug_messages, Dumper($post_data);
         # TODO: sanitise data first!
 	# Mark order complete in database
 	my @completed_orders = $post_data->param('order_complete');
@@ -125,7 +121,6 @@ foreach(keys %$saved_orders)
 	my $order_can_be_fulfilled = 1; # Assume that the order can be fulfilled
 	foreach(@{$saved_orders->{$_}}) # should be an arrayref
 	{
-		push @debug_messages, $_, %available_talks->{$_};
 		$order_can_be_fulfilled = 0 unless %available_talks->{$_};
 		last unless $order_can_be_fulfilled; 
 	}
