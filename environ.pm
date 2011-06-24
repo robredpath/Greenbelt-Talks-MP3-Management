@@ -3,7 +3,7 @@
 use DBI;
 
 open CONF, "../gb_talks.conf" or die $!;
-my $conf = {};
+our $conf = {};
 while(<CONF>)
 {
         my @conf_line = split(/=/,$_);
