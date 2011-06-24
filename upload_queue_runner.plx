@@ -21,6 +21,13 @@ my $sth;
 
 $ENV{PATH} = "/bin:/usr/bin";
 
+$SIG{ALRM} = sub {
+
+die "Process took too long to complete - maybe rsync died?\n";
+
+};
+
+
 # Create a lockfile
 
 `touch /var/run/gb_upload$$`;
@@ -45,11 +52,28 @@ if ( $current_uploads <= $max_uploads )
 	}
 	my $talk_id = pop @queue;
 	
+	alarm(3600); # Let the script run for an hour. If it takes longer than that, we want to quit, log any results, and let another process start up to resume the transfer. 
+	
 	# Run the upload job
+	system("rsync --partial gb_talks_upload/gb11-$talk_id.mp3 $rsync_user\@$rsync_host:$rsync_path/gb11-$talk_id.mp3");
 
-	# Remove the item from the queue
-	$sth = $dbh->prepare('DELETE FROM upload_queue where talk_id=?');
-	$sth->execute($talk_id);
+	# Check what return code rsync gave to determine how it did at the upload
+	
+	if ($? == -1) {
+		print "failed to run rsync: $!\n";
+	}	
+	elsif ($? & 127) {
+		printf "child died with signal %d, %s coredump\n", ($? & 127), ($? & 128) ? "with" : "without";
+	}
+	else { # If we succeeded
+	
+		printf "child exited with value %d\n", $? >> 8;
+		# Remove the item from the queue
+		$sth = $dbh->prepare('DELETE FROM upload_queue where talk_id=?');
+		$sth->execute($talk_id);
+	}
+	
+	alarm(0);
 }
 else
 {
@@ -58,3 +82,4 @@ else
 
 # Remove lockfile
 `rm /var/run/gb_upload$$`;
+
