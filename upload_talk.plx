@@ -27,7 +27,7 @@ use CGI::Carp qw ( fatalsToBrowser );
 use File::Basename;
 use DBI;
 use Cwd qw/abs_path/;
-use Digest::MD5::File;
+use Data::Dumper;
 
 $CGI::POST_MAX = 1024 * 512000; # 512MB should be enough for what we're doing!
 #my $cwd = cwd();
@@ -36,6 +36,9 @@ my $upload_dir = "./gb_talks_upload";
 
 require "./environ.pm";
 our $dbh;
+our $gb_short_year = $1 if $gb_short_year =~ /([0-9]{2})/;
+my $sth;
+my $rv;
 
 my $status_message = "Select a file to upload below";
 
@@ -57,8 +60,8 @@ if ($post_data->param('talk_id') && $post_data->upload('talk_data'))
 	my $talk_data = $post_data->upload('talk_data');
 
 	# Open file for writing with appropriate name
-	warn "$upload_dir/gb11-$talk_id.mp3";
-	open TALK, ">$upload_dir/gb11-$talk_id.mp3" or warn $!;
+	warn "$upload_dir/gb$gb_short_year-$talk_id.mp3";
+	open TALK, ">$upload_dir/gb$gb_short_year-$talk_id.mp3" or warn $!;
 
 	# Write file
 
@@ -72,14 +75,13 @@ if ($post_data->param('talk_id') && $post_data->upload('talk_data'))
 
 	close TALK;
 
-	# md5sum the file
-
-	my $md5sum = file_md5("$upload_dir/gb11-$talk_id.mp3");
-
-	# Write add to transcode queue - md5sum and acknowledge upload
+	# Add to transcode queue
 	warn($talk_id);
-	my $sth = $dbh->prepare("INSERT INTO transcode_queue(`sequence`,`priority`,`talk_id`) VALUES (NULL,5,?)");
-	my $rv = $sth->execute($talk_id);
+	$sth = $dbh->prepare("INSERT INTO transcode_queue(`sequence`,`priority`,`talk_id`) VALUES (NULL,5,?)");
+	$rv = $sth->execute($talk_id);
+	# Mark as uploaded
+	$sth = $dbh->prepare("UPDATE `talks` SET `uploaded`=1 where `talk_id`=?");
+	$rv = $sth->execute($talk_id);
 
 	# email contact to confirm availability (get contact from conf file)
 }
@@ -96,8 +98,21 @@ Greenbelt Talks - Upload New Talk
 <div id="status_message">$status_message </div>
 <div id="upload_form">
 <form action="upload_talk.plx" method="POST" enctype="multipart/form-data">
-mp3: :<input type="file" id="talk_data" name="talk_data"/>
-Talk ID:<input type="text" id="talk_id" name="talk_id"/>
+mp3:<input type="file" id="talk_data" name="talk_data"/>
+Talk ID: <select name="talk_id" id="talk_id">
+END
+
+$sth  = $dbh->prepare("SELECT id FROM talks WHERE uploaded = 0");
+$sth->execute;
+foreach ($sth->fetchrow_array)
+{
+	$output_html .= "<option value='$_'>gb$gb_short_year-$_</option>"
+}
+
+
+
+$output_html .= <<END; 
+</select>
 <input type="submit" value="Upload Talk" name="submit"/>
 </form>
 </div>
