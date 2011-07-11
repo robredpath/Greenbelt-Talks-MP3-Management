@@ -15,8 +15,6 @@ while(<CONF>)
 
 # Set up variables, do initial processing
 
-my $sth;
-my $sql;
 my $db_name = $conf->{'mysql_db'};
 my $db_host = $conf->{'mysql_host'};
 my $db_port = $conf->{'mysql_port'};
@@ -26,3 +24,7 @@ my $db_user = $conf->{'mysql_user'};
 my $db_password =  $conf->{'mysql_pass'};
 
 our $dbh = DBI->connect($dsn, $db_user, $db_password, { RaiseError => 1, AutoCommit => 1 });
+
+our $gb_short_year = $conf->{'gb_short_year'};
+our $gb_long_year = $conf->{'gb_long_year'};
+
