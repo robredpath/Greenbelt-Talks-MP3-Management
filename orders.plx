@@ -33,31 +33,14 @@ my @debug_messages;
 my @error_messages;
 
 # Get all talks
-my @talks;
-$sth = $dbh->prepare("SELECT `id` FROM `talks`");
-$sth->execute();
-while (my @data = $sth->fetchrow_array)
-{
-	push @talks, $data[0];
-}
-
-# Get available talks
-my %available_talks;
-$sth = $dbh->prepare("SELECT `id` from `talks` where `available`=1");
-$sth->execute();
-while (my @data = $sth->fetchrow_array)
-{
-        %available_talks->{@data[0]}++;
-}
+my $talks = $dbh->selectall_hashref('SELECT `id`, `available` FROM `talks`','id');
 
 # Get all existing order IDs to handle errors cleanly
-
 $sth = $dbh->prepare("SELECT `id` from `orders`");
 $sth->execute();
 my $existing_orders = $sth->fetchall_arrayref;
 
 # Get POST data
-
 my $post_data = CGI->new;
 my $new_order = { };
 my $order_is_viable;
@@ -65,27 +48,27 @@ if($post_data->param('order_id'))
 {
 	# TODO: sanitise data first!
 	$new_order->{'id'}=$post_data->param('order_id');
-	unless(grep $new_order->{id}, @{$existing_orders} )
+	unless(grep /^$new_order->{id}$/, @{$existing_orders} )
 	{
-	my @order_items = split(" ",$post_data->param('order_items'));
-	$new_order->{'order_items'} = \@order_items;
-	# parse order items
-	my @this_years_talks;
-	my @additional_talks;
-	foreach(@{$new_order->{'order_items'}})
-	{
-		push @this_years_talks, $_ if $_ =~ /^[0-9]{1,3}$/;
-		push @additional_talks, $_ if /^gb[0-9]{2}-[0-9]{1,3}$/;
-	}
-	# add order ID into orders table
-	$sth = $dbh->prepare("INSERT INTO `orders`(`id`, `additional_talks`) VALUES (?,?)");
-	$sth->execute($new_order->{id}, @additional_talks);
-	# add items into order_items table
-	foreach(@this_years_talks)
-	{
-		$sth = $dbh->prepare("INSERT INTO `order_items`(`order_id`,`talk_id`) VALUES (?,?)"); 
-		$rv = $sth->execute($new_order->{'id'}, $_);
-	}
+		my @order_items = split(" ",$post_data->param('order_items'));
+		$new_order->{'order_items'} = \@order_items;
+		# parse order items
+		my @this_years_talks;
+		my @additional_talks;
+		foreach(@{$new_order->{'order_items'}})
+		{
+			push @this_years_talks, $_ if /^[0-9]{1,3}$/;
+			push @additional_talks, $_ if /^gb[0-9]{2}-[0-9]{1,3}$/;
+		}
+		# add order ID into orders table
+		$sth = $dbh->prepare("INSERT INTO `orders`(`id`, `additional_talks`) VALUES (?,?)");
+		$sth->execute($new_order->{id}, @additional_talks ? @additional_talks : undef );
+		# add items into order_items table
+		foreach(@this_years_talks)
+		{
+			$sth = $dbh->prepare("INSERT INTO `order_items`(`order_id`,`talk_id`) VALUES (?,?)"); 
+			$rv = $sth->execute($new_order->{'id'}, $_);
+		}
 	} else {
 		push @error_messages, "Error: Order $new_order->{id} already exists";
 	}
@@ -138,7 +121,10 @@ foreach(keys %$saved_orders)
 	my $order_can_be_fulfilled = 1; # Assume that the order can be fulfilled
 	foreach(@{$saved_orders->{$_}}) # should be an arrayref
 	{
-		$order_can_be_fulfilled = 0 unless %available_talks->{$_};
+		# We can't fulfill an order if the talk isn't available
+		$order_can_be_fulfilled = 0 unless $talks->{$_}->{available};
+		# Talks other than those in the current year are undef as they're not in the talks db table.
+		$order_can_be_fulfilled = 1 unless defined $talks->{$_}->{id};
 		last unless $order_can_be_fulfilled; 
 	}
 	if($order_can_be_fulfilled)
@@ -147,7 +133,6 @@ foreach(keys %$saved_orders)
 	}
 	
 }
-
 # Set up the HTML header
 
 my $output_html = <<END;
@@ -241,9 +226,9 @@ $output_html .= <<END;
 <p>
 END
 
-foreach(keys %available_talks)
+foreach(values %$talks)
 {
-	$output_html .= "$_ "
+	$output_html .= "$_->{id} " if $_->{available};
 }
 
 $output_html .= <<END;
