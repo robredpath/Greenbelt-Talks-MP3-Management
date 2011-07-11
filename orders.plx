@@ -25,6 +25,7 @@ use Data::Dumper;
 
 require "./environ.pm";
 our $dbh;
+our $gb_short_year;
 my $sth;
 my $rv;
 my $sql;
@@ -49,6 +50,11 @@ while (my @data = $sth->fetchrow_array)
         %available_talks->{@data[0]}++;
 }
 
+# Get all existing order IDs to handle errors cleanly
+
+$sth = $dbh->prepare("SELECT `id` from `orders`");
+$sth->execute();
+my $existing_orders = $sth->fetchall_arrayref;
 
 # Get POST data
 
@@ -59,21 +65,29 @@ if($post_data->param('order_id'))
 {
 	# TODO: sanitise data first!
 	$new_order->{'id'}=$post_data->param('order_id');
+	unless(grep $new_order->{id}, @{$existing_orders} )
+	{
 	my @order_items = split(" ",$post_data->param('order_items'));
 	$new_order->{'order_items'} = \@order_items;
-	# check that order is viable - no invalid data
-	foreach($new_order->{'order_items'})
+	# parse order items
+	my @this_years_talks;
+	my @additional_talks;
+	foreach(@{$new_order->{'order_items'}})
 	{
-		
+		push @this_years_talks, $_ if $_ =~ /^[0-9]{1,3}$/;
+		push @additional_talks, $_ if /^gb[0-9]{2}-[0-9]{1,3}$/;
 	}
 	# add order ID into orders table
-	$sth = $dbh->prepare("INSERT INTO `orders`(`id`) VALUES ('$new_order->{'id'}')");
-	$sth->execute();
+	$sth = $dbh->prepare("INSERT INTO `orders`(`id`, `additional_talks`) VALUES (?,?)");
+	$sth->execute($new_order->{id}, @additional_talks);
 	# add items into order_items table
-	foreach(@order_items)
+	foreach(@this_years_talks)
 	{
 		$sth = $dbh->prepare("INSERT INTO `order_items`(`order_id`,`talk_id`) VALUES (?,?)"); 
 		$rv = $sth->execute($new_order->{'id'}, $_);
+	}
+	} else {
+		push @error_messages, "Error: Order $new_order->{id} already exists";
 	}
 }
 
@@ -109,6 +123,9 @@ foreach(@orders)
 	{ 
 		push @order, $data[0];
 	}
+	$sth = $dbh->prepare("SELECT `additional_talks` FROM `orders` WHERE `id` = ?");
+	$sth->execute($_);
+	push @order, $sth->fetchrow_array;
 	$saved_orders->{$_} = \@order;
 }
 
@@ -207,7 +224,7 @@ $output_html .= <<END;
 <form method="post">
 <h2>New Order</h2>
 <p>Order ID<input type="text" name="order_id"></p>
-<p>Talks(list of talk IDs, separated by spaces, with gb11 (or other year prefix))<textarea id="order_items" name="order_items"></textarea></p>
+<p>Talks(list of talk IDs, separated by spaces. Talks without a prefix are implicitly prefixed gb$gb_short_year- .)<textarea id="order_items" name="order_items"></textarea></p>
 <p><input type="submit"/></p>
 </form>
 </div>
@@ -250,7 +267,6 @@ END
 foreach(keys %$saved_orders)
 {
 	next unless %f_orders->{$_};
-	push @debug_messages, Dumper($_);
         $output_html .= "<tr><td>$_</td><td>";
 	foreach(@{$saved_orders->{$_}})
 	{
@@ -262,7 +278,6 @@ foreach(keys %$saved_orders)
 foreach(keys %$saved_orders)
 {
         next if %f_orders->{$_};
-        push @debug_messages, Dumper($_);
         $output_html .= "<tr><td>$_</td><td>";
         foreach(@{$saved_orders->{$_}})
         {
