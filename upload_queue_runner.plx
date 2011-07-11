@@ -42,7 +42,7 @@ my $current_uploads = $1 if `ls /var/run/gb_upload* | wc -l` =~ /([0-9]+)/;
 
 if ( $current_uploads <= $max_uploads )
 {
-	# Get the next talk to transcode - highest priority first, oldest first
+	# Get the next talk to upload - highest priority first, oldest first
 	$sth = $dbh->prepare("SELECT talk_id FROM upload_queue ORDER BY priority DESC, sequence DESC LIMIT 1;");
 	$sth->execute;
 	my @queue;
@@ -54,6 +54,7 @@ if ( $current_uploads <= $max_uploads )
 	
 	alarm(3600); # Let the script run for an hour. If it takes longer than that, we want to quit, log any results, and let another process start up to resume the transfer. 
 	
+	$0 = "upload_queue_runner.plx - gb11-$talk_id.mp3";	
 	# Run the upload job
 	system("rsync --partial gb_talks_upload/gb11-$talk_id.mp3 $rsync_user\@$rsync_host:$rsync_path/gb11-$talk_id.mp3");
 

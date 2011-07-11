@@ -51,6 +51,8 @@ if ( $current_transcodes <= $max_transcodes )
 	}
 	my $talk_id = pop @queue;
 	
+	$0 = "transcode_queue_runner.plx - gb11-$talk_id.mp3";	
+	
 	# Get the metadata
 	$sth = $dbh->prepare("SELECT speaker, title FROM talks WHERE id=?");
 	$sth->execute($talk_id);

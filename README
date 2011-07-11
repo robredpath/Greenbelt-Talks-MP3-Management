@@ -8,19 +8,16 @@ Individual orders for mp3s - Web page, orders.plx
 HQ mp3 files - Web page, upload_talk.plx
 
 Processing:-
-Back up HQ mp3 - backup_hq_files.plx
-Transcode to LQ mp3 - transcode_queue_runner.plx
+Transcode to LQ mp3 - Cron script, transcode_queue_runner.plx
 
 Outputs:-
 Admin function - admin.plx
-Upload LQ mp3s to website - upload_queue_runner.plx
-Make repo of LQ mp3s available to duplication team - download from local website
+Upload LQ mp3s to website - Cron script, upload_queue_runner.plx
+Make repo of LQ mp3s available to duplication team - this is currently handled by a local SMB share
 
 State reporting
-- Use process name to communicate state - include talk ID
+- Generally, scripts should set $0 to their talk ID
 
 Logging
-- Upload queue runner log - queue_runner.log
+- Upload queue runner log - upload.log
 - Transcode queue runner log - transcode.log
-
-
