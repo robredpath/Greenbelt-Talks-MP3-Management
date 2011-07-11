@@ -1,6 +1,6 @@
 This is the order processing system for Greenbelt Festival's Talks Team.
 
-Installation:- Copy gb_talks.conf to /etc and make it readable by the appropriate users. We recommend that these scripts be executed as as reduced-priviledge user. TODO: automate this with GNU make. Trying to run these scripts on a Windows system would be foolish.
+Installation:- Copy gb_talks.conf to /etc and make it readable by the appropriate users. We recommend that these scripts be executed as as reduced-priviledge user. TODO: make this into an RPM. 
 
 Inputs:-
 The list of talks for the festival - CSV file, parse_talks.plx
@@ -11,13 +11,12 @@ Processing:-
 Transcode to LQ mp3 - Cron script, transcode_queue_runner.plx
 
 Outputs:-
-Admin function - admin.plx
 Upload LQ mp3s to website - Cron script, upload_queue_runner.plx
 Make repo of LQ mp3s available to duplication team - this is currently handled by a local SMB share
 
 State reporting
 - Generally, scripts should set $0 to their talk ID
 
-Logging
+Logging - through syslog
 - Upload queue runner log - upload.log
 - Transcode queue runner log - transcode.log

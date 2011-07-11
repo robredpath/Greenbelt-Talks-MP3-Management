@@ -13,31 +13,35 @@ use warnings;
 #####################################################
 
 use DBI;
+use Sys::Syslog qw/ :DEFAULT setlogsock /;
 
 require "./environ.pm";
 our $dbh;
 our $conf;
+our $gb_short_year;
 my $sth;
+
+setlogsock('unix');
 
 $ENV{PATH} = "/bin:/usr/bin";
 
 $SIG{ALRM} = sub {
 
-die "Process took too long to complete - maybe rsync died?\n";
+	openlog('gb_talks_upload_queue_runner','','user')
+	syslog('err', 'Process took too long to complete - maybe rsync died?');
+	closelog;
 
+	die "Process took too long to complete - maybe rsync died?\n";
 };
 
 
 # Create a lockfile
-
 `touch /var/run/gb_upload$$`;
 
 # Ask the config file how many of me there should be
-
 my $max_uploads = $1 if $conf->{'max_uploads'} =~ /([0-9]+)/;
 
 # Check for lockfiles to see if we're running enough already.
-
 my $current_uploads = $1 if `ls /var/run/gb_upload* | wc -l` =~ /([0-9]+)/;
 
 if ( $current_uploads <= $max_uploads )
@@ -54,21 +58,20 @@ if ( $current_uploads <= $max_uploads )
 	
 	alarm(3600); # Let the script run for an hour. If it takes longer than that, we want to quit, log any results, and let another process start up to resume the transfer. 
 	
-	$0 = "upload_queue_runner.plx - gb11-$talk_id.mp3";	
+	$0 = "upload_queue_runner.plx - gb$gb_short_year-$talk_id.mp3";	
 	# Run the upload job
-	system("rsync --partial gb_talks_upload/gb11-$talk_id.mp3 $rsync_user\@$rsync_host:$rsync_path/gb11-$talk_id.mp3");
+	system("rsync --partial gb_talks_upload/gb$gb_short_year-$talk_id.mp3 $rsync_user\@$rsync_host:$rsync_path/gb$gb_short_year-$talk_id.mp3");
 
 	# Check what return code rsync gave to determine how it did at the upload
 	
 	if ($? == -1) {
-		print "failed to run rsync: $!\n";
+		log('err', "failed to run rsync: $!\n");
 	}	
 	elsif ($? & 127) {
-		printf "child died with signal %d, %s coredump\n", ($? & 127), ($? & 128) ? "with" : "without";
+		log(printf "child died with signal %d, %s coredump\n", ($? & 127), ($? & 128) ? "with" : "without");
 	}
 	else { # If we succeeded
-	
-		printf "child exited with value %d\n", $? >> 8;
+		log(printf "child exited with value %d\n", $? >> 8);
 		# Remove the item from the queue
 		$sth = $dbh->prepare('DELETE FROM upload_queue where talk_id=?');
 		$sth->execute($talk_id);
@@ -84,3 +87,10 @@ else
 # Remove lockfile
 `rm /var/run/gb_upload$$`;
 
+sub log
+{
+	my ($log_level, $log_message) = $@;
+	openlog('gb_talks_upload_queue_runner','','user')
+        syslog($log_level, $log_message);
+        closelog;
+}
