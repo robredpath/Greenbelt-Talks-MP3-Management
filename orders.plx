@@ -138,8 +138,11 @@ foreach(keys %$saved_orders)
 my $output_html = <<END;
 
 <html>
+<head>
+<link rel="stylesheet" type="text/css" href="gb_talks.css" />
+</head>
 <body>
-
+<div id="page">
 <div id="logo">
 <img src="gb_logo.png" />
 </div>
@@ -304,6 +307,7 @@ END
 
 $output_html .= <<END;
 
+</div>
 </body>
 </html>
 END

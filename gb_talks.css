@@ -1,0 +1,56 @@
+#page {
+	position: absolute;
+	width: 800px;
+	text-align: center;
+	font-family: sans-serif;
+}
+
+#logo {
+	
+}
+
+#title {
+
+}
+
+#debug {
+        position: relative;
+        width: 800px;
+        text-align: left;
+        background-color: rgb(255,200,200);
+        padding:10px;
+        border: 1px solid rgb(255,100,100);
+        margin: 10px;
+}
+
+#new_order_form {
+	position: relative;
+	width: 800px;
+	text-align: left;
+	background-color: rgb(200,200,255);
+	padding:10px;
+	border: 1px solid rgb(100,100,255);
+	margin: 10px;
+}
+
+#available_talks {
+	position: relative;
+        width: 800px;
+        text-align: left;
+        background-color: rgb(200,200,255);
+        padding:10px;
+        border: 1px solid rgb(100,100,255);
+	margin: 10px;
+}
+
+#saved_orders {
+        position: relative;
+        width: 800px;
+        text-align: left;
+        background-color: rgb(200,200,255);
+        padding:10px;
+        border: 1px solid rgb(100,100,255);
+	margin: 10px;
+}
+
+
