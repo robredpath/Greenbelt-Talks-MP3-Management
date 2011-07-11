@@ -42,7 +42,7 @@ if (! -e './gb_upload_queue')
 if ( $current_transcodes <= $max_transcodes )
 {
 	# Get the next talk to transcode - highest priority first, oldest first
-	$sth = $dbh->prepare("SELECT talk_id FROM transcode_queue ORDER BY priority DESC, sequence DESC LIMIT 1;");
+	$sth = $dbh->prepare("SELECT talk_id FROM transcode_queue ORDER BY priority DESC, sequence DESC LIMIT 1");
 	$sth->execute;
 	my @queue;
 	while (my @data = $sth->fetchrow_array)
@@ -51,29 +51,34 @@ if ( $current_transcodes <= $max_transcodes )
 	}
 	my $talk_id = pop @queue;
 	
-	$0 = "transcode_queue_runner.plx - gb11-$talk_id.mp3";	
+	if ($talk_id)
+	{	
+		$0 = "transcode_queue_runner.plx - gb11-$talk_id.mp3";	
 	
-	# Get the metadata
-	$sth = $dbh->prepare("SELECT speaker, title FROM talks WHERE id=?");
-	$sth->execute($talk_id);
-	my @talk_data;
-	while (my @data = $sth->fetchrow_array)
-        {
-                push @talk_data, $data[0];
-		push @talk_data, $data[1];
-        }
-        my $talk_speaker = pop @talk_data;
-	my $talk_title = pop @talk_data;
+		# Get the metadata
+		$sth = $dbh->prepare("SELECT speaker, title FROM talks WHERE id=?");
+		$sth->execute($talk_id);
+		my @talk_data;
+		while (my @data = $sth->fetchrow_array)
+        	{
+                	push @talk_data, $data[0];
+			push @talk_data, $data[1];
+        	}
+        	my $talk_speaker = pop @talk_data;
+		my $talk_title = pop @talk_data;
 	
-	# Set up metadata to pass to LAME
-	my $lame_data = " --id3v2-only --tt '$talk_title' --ta '$talk_speaker' --tl 'Greenbelt Festival Talks 2011' --ty 2011 --tn $talk_id";
+		# Set up metadata to pass to LAME
+		my $lame_data = " --id3v2-only --tt '$talk_title' --ta '$talk_speaker' --tl 'Greenbelt Festival Talks 2011' --ty 2011 --tn $talk_id";
 
-	# Run the transcode job
-	system("lame $lame_params $lame_data ./gb_talks_upload/gb11-$talk_id.mp3 ./gb_upload_queue/gb11-$talk_id.mp3");	
+		# Run the transcode job
+		system("lame $lame_params $lame_data ./gb_talks_upload/gb11-$talk_id.mp3 ./gb_upload_queue/gb11-$talk_id.mp3");	
 
-	# Remove the item from the queue
-	$sth = $dbh->prepare('DELETE FROM transcode_queue where talk_id=?');
-	$sth->execute($talk_id);
+		# Remove the item from the queue
+		$sth = $dbh->prepare('DELETE FROM transcode_queue where talk_id=?');
+		$sth->execute($talk_id);
+	} else {
+		warn ("Nothing in queue");
+	}
 }
 else
 {

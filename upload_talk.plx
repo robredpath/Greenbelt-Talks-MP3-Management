@@ -74,7 +74,7 @@ if ($post_data->param('talk_id') && $post_data->upload('talk_data'))
 	$sth = $dbh->prepare("INSERT INTO transcode_queue(`sequence`,`priority`,`talk_id`) VALUES (NULL,5,?)");
 	$rv = $sth->execute($talk_id);
 	# Mark as uploaded
-	$sth = $dbh->prepare("UPDATE `talks` SET `uploaded`=1 where `talk_id`=?");
+	$sth = $dbh->prepare("UPDATE `talks` SET `uploaded`=1 where `id`=?");
 	$rv = $sth->execute($talk_id);
 
 	# email contact to confirm availability (get contact from conf file)
