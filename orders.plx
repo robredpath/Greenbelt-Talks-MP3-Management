@@ -96,7 +96,7 @@ while (my @data = $sth->fetchrow_array)
         push @orders, $data[0];
 }
 
-#Get the contents of each order
+# Get the contents of each order
 foreach(@orders)
 {
 	my @order;
@@ -209,8 +209,8 @@ $output_html .= <<END;
 <form method="post">
 <h2>New Order</h2>
 <p>Order ID<input type="text" name="order_id"></p>
-<p>Talks(list of talk IDs, separated by spaces. Talks without a prefix are implicitly prefixed gb$gb_short_year- .)<textarea id="order_items" name="order_items"></textarea></p>
-<p><input type="submit"/></p>
+<p>Talks. Separate values with spaces. Talks without a prefix are implicitly prefixed gb$gb_short_year- <textarea id="order_items" name="order_items"></textarea></p>
+<p><input type="submit" /></p>
 </form>
 </div>
 
@@ -226,7 +226,7 @@ $output_html .= <<END;
 <p>
 END
 
-foreach(values %$talks)
+foreach(sort values %$talks)
 {
 	$output_html .= "$_->{id} " if $_->{available};
 }
@@ -249,7 +249,7 @@ $output_html .= <<END;
 <tr><td>Order ID</td><td>Talks in Order</td><td>F?</td><td>Complete?</td></tr>
 END
 
-foreach(keys %$saved_orders)
+foreach(sort keys %$saved_orders)
 {
 	next unless %f_orders->{$_};
         $output_html .= "<tr><td>$_</td><td>";
@@ -260,7 +260,7 @@ foreach(keys %$saved_orders)
 	$output_html .= "</td><td>F</td><td><input type='checkbox' name='order_complete' value='$_'></td></tr>";
 }
 
-foreach(keys %$saved_orders)
+foreach(sort keys %$saved_orders)
 {
         next if %f_orders->{$_};
         $output_html .= "<tr><td>$_</td><td>";
