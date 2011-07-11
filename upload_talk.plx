@@ -12,28 +12,22 @@ use warnings;
 #
 # Inputs:
 # 
-# HQ mp3 file
-# Talk ID to name
+# POST submission of an MP3 file and a talk ID
 #
 # Outputs:
 #
 # HQ mp3 file saved to disk
-# md5sum, entry in transcode queue runner in db
 # HTML page acknowledging upload
+# Database updates
 #************************************************************************
 
 use CGI;
 use CGI::Carp qw ( fatalsToBrowser ); 
-use File::Basename;
 use DBI;
-use Cwd qw/abs_path/;
-use Data::Dumper;
 
+# Set up the environment
 $CGI::POST_MAX = 1024 * 512000; # 512MB should be enough for what we're doing!
-#my $cwd = cwd();
 my $upload_dir = "./gb_talks_upload";
-
-
 require "./environ.pm";
 our $dbh;
 our $gb_short_year = $1 if $gb_short_year =~ /([0-9]{2})/;
@@ -110,7 +104,6 @@ foreach ($sth->fetchrow_array)
 }
 
 
-
 $output_html .= <<END; 
 </select>
 <input type="submit" value="Upload Talk" name="submit"/>
@@ -118,8 +111,6 @@ $output_html .= <<END;
 </div>
 
 END
-
-
 
 
 #Set up footer
