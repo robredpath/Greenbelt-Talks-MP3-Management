@@ -28,3 +28,7 @@ our $dbh = DBI->connect($dsn, $db_user, $db_password, { RaiseError => 1, AutoCom
 our $gb_short_year = $conf->{'gb_short_year'};
 our $gb_long_year = $conf->{'gb_long_year'};
 
+our $rsync_user = $conf->{'rsync_user'};
+our $rsync_pass = $conf->{'rsync_pass'};
+our $rsync_path = $conf->{'rsync_path'};
+our $rsync_host = $conf->{'rsync_host'};
