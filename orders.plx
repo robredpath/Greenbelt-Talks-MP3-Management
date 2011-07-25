@@ -147,7 +147,7 @@ my $output_html = <<END;
 <img src="gb_logo.png" />
 </div>
 <div id="title">
-<p>Greenbelt Talks Team - mp3 orders</p>
+<h2>Greenbelt Talks Team - mp3 orders</h2>
 </div>
 END
 
@@ -159,7 +159,7 @@ if($post_data->param('order_id'))
 $output_html .= <<END;
 
 <div id="confirmation">
-<h2>Results</h2>
+<h3>Results</h3>
 END
 
 	if(@error_messages)
@@ -189,7 +189,7 @@ $output_html .= <<END;
 
 <div id="new_order_form">
 <form method="post">
-<h2>New Order</h2>
+<h3>New Order</h3>
 <p>Order ID<input type="text" name="order_id"></p>
 <p>Talks. Separate values with spaces. Talks without a prefix are implicitly prefixed gb$gb_short_year- <textarea id="order_items" name="order_items"></textarea></p>
 <p><input type="submit" /></p>
@@ -204,7 +204,7 @@ END
 $output_html .= <<END;
 
 <div id="available_talks">
-<h2>Available Talks</h2>
+<h3>Available Talks</h3>
 <p>
 END
 
@@ -225,7 +225,7 @@ END
 $output_html .= <<END;
 
 <div id="saved_orders">
-<h2>Pending Orders</h2>
+<h3>Pending Orders</h3>
 <form method="POST">
 <table>
 <tr><td>Order ID</td><td>Talks in Order</td><td>F?</td><td>Complete?</td></tr>
@@ -262,12 +262,12 @@ $output_html .= <<END;
 END
 
 # Output debug messages
-
+if (@debug_messages) {
 $output_html .= <<END;
 
 <div id ="debug">
 
-<h2>Debug messages</h2>
+<h3>Debug messages</h3>
 END
 
 foreach(@debug_messages)
@@ -281,7 +281,7 @@ $output_html .= <<END;
 </div>
 
 END
-
+}
 # And the footer, just in case there's anything that needs to go here
 
 $output_html .= <<END;

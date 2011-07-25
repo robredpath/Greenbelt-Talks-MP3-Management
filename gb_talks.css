@@ -53,4 +53,25 @@
 	margin: 10px;
 }
 
+#status_message {
+        position: relative;
+        width: 800px;
+        text-align: left;
+        background-color: rgb(200,255,200);
+        padding:10px;
+        border: 1px solid rgb(100,255,100);
+        margin: 10px;
+}
+
+#upload_form {
+        position: relative;
+        width: 800px;
+        text-align: left;
+        background-color: rgb(200,200,255);
+        padding:10px;
+        border: 1px solid rgb(100,100,255);
+        margin: 10px;
+}
+
+
 

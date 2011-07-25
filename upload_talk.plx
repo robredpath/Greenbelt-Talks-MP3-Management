@@ -34,7 +34,7 @@ our $gb_short_year = $1 if $gb_short_year =~ /([0-9]{2})/;
 my $sth;
 my $rv;
 
-my $status_message = "Select a file to upload below";
+my $status_message;
 
 # If there is POST data
 my $post_data = new CGI;
@@ -78,19 +78,34 @@ if ($post_data->param('talk_id') && $post_data->upload('talk_data'))
 	$rv = $sth->execute($talk_id);
 
 	# email contact to confirm availability (get contact from conf file)
+	$status_message = "Talk uploaded";
 }
 
 #Set up header
 my $output_html = <<END;
 
 <html>
+<head>
+<link rel="stylesheet" type="text/css" href="gb_talks.css" />
+</head>
 <body>
+<div id="page">
 <div id="header">
 <div id="logo"><img src="gb_logo.png" /></div>
-Greenbelt Talks - Upload New Talk
+<h2>Greenbelt Talks - Upload New Talk</h2>
 </div>
+
+END
+
+if($status_message) { 
+$output_html .= <<END;
 <div id="status_message">$status_message </div>
+END
+}
+
+$output_html .= <<END;
 <div id="upload_form">
+<h3>Select a talk to upload below</h3>
 <form action="upload_talk.plx" method="POST" enctype="multipart/form-data">
 mp3:<input type="file" id="talk_data" name="talk_data"/>
 Talk ID: <select name="talk_id" id="talk_id">
@@ -116,7 +131,7 @@ END
 #Set up footer
 
 $output_html .= <<END;
-
+</div>
 </body>
 </html>
 END
