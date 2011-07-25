@@ -60,7 +60,7 @@ if ( $current_uploads <= $max_uploads )
 	
 	$0 = "upload_queue_runner.plx - gb$gb_short_year-$talk_id.mp3";	
 	# Run the upload job
-	system("rsync --partial gb_talks_upload/gb$gb_short_year-$talk_id.mp3 $rsync_user\@$rsync_host:$rsync_path/gb$gb_short_year-$talk_id.mp3");
+	system("rsync --partial upload_queue/gb$gb_short_year-$talk_id.mp3 $rsync_user\@$rsync_host:$rsync_path/gb$gb_short_year-$talk_id.mp3");
 
 	# Check what return code rsync gave to determine how it did at the upload
 	

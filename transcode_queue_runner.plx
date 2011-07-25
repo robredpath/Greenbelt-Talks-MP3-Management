@@ -34,9 +34,9 @@ my $max_transcodes = $1 if $conf->{'max_transcodes'} =~ /([0-9]+)/;
 
 my $current_transcodes = $1 if `ls /var/run/gb_transcode* | wc -l` =~ /([0-9]+)/;
 
-if (! -e './gb_upload_queue')
+if (! -e './transcode_queue')
 {
-	mkdir('./gb_upload_queue');
+	mkdir('./transcode_queue');
 }
 
 if ( $current_transcodes <= $max_transcodes )
@@ -71,7 +71,7 @@ if ( $current_transcodes <= $max_transcodes )
 		my $lame_data = " --id3v2-only --tt '$talk_title' --ta '$talk_speaker' --tl 'Greenbelt Festival Talks 2011' --ty 2011 --tn $talk_id";
 
 		# Run the transcode job
-		system("lame $lame_params $lame_data ./gb_talks_upload/gb11-$talk_id.mp3 ./gb_upload_queue/gb11-$talk_id.mp3");	
+		system("lame $lame_params $lame_data ./transcode_queue/gb11-$talk_id.mp3 ./upload_queue/gb11-$talk_id.mp3");	
 
 		# Remove the item from the queue
 		$sth = $dbh->prepare('DELETE FROM transcode_queue where talk_id=?');
