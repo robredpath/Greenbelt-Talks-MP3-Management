@@ -14,7 +14,7 @@ use warnings;
 
 use DBI;
 use Sys::Syslog qw/ :DEFAULT setlogsock /;
-use HTTP::Request;
+use HTTP::Request::Common qw(POST);
 use LWP::UserAgent;
 
 require "./environ.pm";
@@ -80,9 +80,25 @@ if ( $current_uploads <= $max_uploads )
 		}
 		else { # If we succeeded
 			log_it(printf "child exited with value %d\n", $? >> 8);
+			use Digest::MD5;
+			my $ctx = Digest::MD5->new;
+			open FILE "<upload_queue/gb$gb_short_year-$talk_id.mp3";
+			binmode(FILE);
+			while(<FILE>) {
+				$ctx->add($_);
+			}
+			my $file_md5 = $ctx->b64digest;
+			$ctx->add("action=make-available&checksum=$file_md5");
+			$ctx->add($api_secret);
+			# Make an API call to confirm that the talk on the server matches the one locally
+			# and go live if it does
+			my $ua = LWP::UserAgent->new;
+			my $request = POST "$api_host", [action => 'make-available', checksum => $md5, sig => $ctx->b64digest ];
+	
 			# Remove the item from the queue
 			$sth = $dbh->prepare('DELETE FROM upload_queue where talk_id=?');
-		$sth->execute($talk_id);
+			$sth->execute($talk_id);
+			
 		}
 	
 		alarm(0);
