@@ -184,6 +184,8 @@ END
 
 }
 
+# ADDME: List of completed orders
+
 # Form for adding a new order - order ID, order items as a space-separated list. 
 $output_html .= <<END;
 
