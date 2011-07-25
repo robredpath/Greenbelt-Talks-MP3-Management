@@ -30,11 +30,12 @@ $CGI::POST_MAX = 1024 * 512000; # 512MB should be enough for what we're doing!
 my $upload_dir = "./gb_talks_upload";
 require "./environ.pm";
 our $dbh;
+our $conf;
 our $gb_short_year = $1 if $gb_short_year =~ /([0-9]{2})/;
 my $sth;
 my $rv;
 
-my $status_message;
+my ($status_message, $error_message);
 
 # If there is POST data
 my $post_data = new CGI;
@@ -48,17 +49,35 @@ if (! -e $upload_dir)
 	mkdir $upload_dir or warn $!;
 }
 
-if ($post_data->param('talk_id') && $post_data->upload('talk_data'))
+if ($post_data->param('talk_id') && $post_data->upload('talk_data') && $post_data->upload('snip_data'))
 {
 	$talk_id = $1 if $post_data->param('talk_id')  =~ /([0-9]+)/;
 	my $talk_data = $post_data->upload('talk_data');
+	my $snip_data = $post_data->upload('snip_data'};
+
+	# Open snip file for writing
+	
+	my $snip_filename = "gb$conf->{'gb_short_year'}-$talk_id" . "snip.mp3";
+        warn "$upload_dir/$snip_filename";
+        open TALK, ">$upload_dir/gb$snip_filename" or warn $!;
+
+        # Write file
+        binmode TALK;
+        while ( <$snip_data> )
+        {
+        	print TALK;
+        }
+        
+        # Close file
+        close TALK;
+        
 
 	# Open file for writing with appropriate name
-	warn "$upload_dir/gb$gb_short_year-$talk_id.mp3";
-	open TALK, ">$upload_dir/gb$gb_short_year-$talk_id.mp3" or warn $!;
+	my $mp3_filename = "gb$conf->{'gb_short_year'}-$talk_id" . "mp3.mp3";
+	warn "$upload_dir/$mp3_filename";
+	open TALK, ">$upload_dir/gb$mp3_filename" or warn $!;
 
 	# Write file
-
 	binmode TALK;
 	while ( <$talk_data> ) 
 	{	 
@@ -66,7 +85,6 @@ if ($post_data->param('talk_id') && $post_data->upload('talk_data'))
 	}
 
 	# Close file
-
 	close TALK;
 
 	# Add to transcode queue
@@ -79,6 +97,8 @@ if ($post_data->param('talk_id') && $post_data->upload('talk_data'))
 
 	# email contact to confirm availability (get contact from conf file)
 	$status_message = "Talk uploaded";
+} elsif ($post_data->param('talk_id'}) {
+	$error_message = "Both mp3 and snip file are required";
 }
 
 #Set up header
@@ -103,11 +123,19 @@ $output_html .= <<END;
 END
 }
 
+if($error_message) {
+$output_html .= <<END;
+<div id="error_message">$error_message </div>
+END
+
+}
+
 $output_html .= <<END;
 <div id="upload_form">
 <h3>Select a talk to upload below</h3>
 <form action="upload_talk.plx" method="POST" enctype="multipart/form-data">
 mp3:<input type="file" id="talk_data" name="talk_data"/>
+snip:<input type="file" id="snip_data" name="snip_data"/>
 Talk ID: <select name="talk_id" id="talk_id">
 END
 
@@ -115,7 +143,7 @@ $sth  = $dbh->prepare("SELECT id FROM talks WHERE uploaded = 0");
 $sth->execute;
 foreach ($sth->fetchrow_array)
 {
-	$output_html .= "<option value='$_'>gb$gb_short_year-$_</option>"
+	$output_html .= "<option value='$_'>gb$conf->{'gb_short_year'}-$_</option>"
 }
 
 
