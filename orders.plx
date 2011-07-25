@@ -151,27 +151,6 @@ my $output_html = <<END;
 </div>
 END
 
-# Output any debug messages
-
-$output_html .= <<END;
-
-<div id ="debug">
-
-<h2>Debug messages</h2>
-END
-
-foreach(@debug_messages)
-{
-
-	$output_html .= "<p>" . $_ . "</p>";
-
-}
-$output_html .= <<END;
-
-</div>
-
-END
-
 # Was there any POST data? If so, output confirmation that the request has been processed
 
 if($post_data->param('order_id'))
@@ -282,7 +261,7 @@ $output_html .= <<END;
 
 END
 
-# Output debug messages again, for any errors during HTML generation
+# Output debug messages
 
 $output_html .= <<END;
 
