@@ -25,7 +25,8 @@ use Data::Dumper;
 
 require "./environ.pm";
 our $dbh;
-our $gb_short_year;
+our $conf;
+my $gb_short_year = $1 if $conf->{'gb_short_year'} =~ /([0-9]{2})/;
 my $sth;
 my $rv;
 my $sql;
@@ -133,6 +134,35 @@ foreach(keys %$saved_orders)
 	}
 	
 }
+
+
+# Get all completed orders
+
+my $completed_orders = { };
+$sth = $dbh->prepare("SELECT `id` FROM `orders` WHERE `complete`=1");
+$sth->execute();
+my @orders;
+while (my @data = $sth->fetchrow_array)
+{
+        push @orders, $data[0];
+}
+
+foreach(@orders)
+{
+        my @order;
+        $sth = $dbh->prepare("SELECT `talk_id` FROM `order_items` WHERE `order_id`= ?");
+        $sth->execute($_);
+        while (my @data = $sth->fetchrow_array)
+        {
+                push @order, $data[0];
+        }
+        $sth = $dbh->prepare("SELECT `additional_talks` FROM `orders` WHERE `id` = ?");
+        $sth->execute($_);
+        push @order, $sth->fetchrow_array;
+        $completed_orders->{$_} = \@order;
+}
+
+
 # Set up the HTML header
 
 my $output_html = <<END;
@@ -183,8 +213,6 @@ END
 
 
 }
-
-# ADDME: List of completed orders
 
 # Form for adding a new order - order ID, order items as a space-separated list. 
 $output_html .= <<END;
@@ -259,6 +287,30 @@ $output_html .= <<END;
 </table>
 <input type="submit" value="Mark orders as complete" />
 </form>
+</div>
+
+END
+
+# Output list of orders that have been completed
+$output_html .= <<END;
+<div id="completed_orders" class="blue_box">
+<h3>Completed Orders</h3>
+<table>
+<tr><td>Order ID</td><td>Talks in Order</td></tr>
+END
+
+foreach(sort keys %$completed_orders)
+{
+        $output_html .= "<tr><td>$_</td><td>";
+        foreach(@{$completed_orders->{$_}})
+        {
+                $output_html .= "$_ ";
+        }
+        $output_html .= "</td></tr>";
+}
+
+$output_html .= <<END;
+</table>
 </div>
 
 END

@@ -58,6 +58,10 @@ while(my $row = $sth->fetchrow_hashref)
 my @currently_online_talks;
 # Produce output
 
+
+
+
+
 # Set up the HTML header
 
 my $output_html = <<END;
@@ -132,6 +136,7 @@ END
 
 	$output_html .= <<END;
 </table>
+<input type="hidden" name="form_name" value="transcode_queue" />
 <input type="submit" value="Update queue" />
 </form>
 END
@@ -175,6 +180,7 @@ END
 
         $output_html .= <<END;
 </table>
+<input type="hidden" name="form_name" value="upload_queue" />
 <input type="submit" value="Update queue" />
 </form>
 END
@@ -204,7 +210,7 @@ END
         {
 		$output_html .= "<form method='post' action='admin.plx'>";
                 $output_html .= "<tr><td>$talk->{talk_id}</td><td>";
-                $output_html .= "<input type='hidden' name='talk_$talk->{talk_id}_suspend'>";
+                $output_html .= "<input type='hidden' name='talk_suspend' value='$_->{talk_id}'>";
 		$output_html .= "<input type='submit' value='Suspend' />";
                 $output_html .= "</td></tr>";
 		$output_html .= "</form>";
