@@ -37,9 +37,6 @@ my $post_data = CGI->new;
 
 # Grab current upload queue
 my @upload_queue;
-
-
-
 $sth = $dbh->prepare("SELECT talk_id, priority, sequence FROM upload_queue ORDER BY priority DESC, sequence ASC");
 $sth->execute;
 while(my $row = $sth->fetchrow_hashref)
@@ -49,7 +46,6 @@ while(my $row = $sth->fetchrow_hashref)
 
 # Grab current transcode queue
 my @transcode_queue;
-
 $sth = $dbh->prepare("SELECT talk_id, priority, sequence FROM transcode_queue ORDER BY priority DESC, sequence ASC");
 $sth->execute;
 while(my $row = $sth->fetchrow_hashref)
@@ -59,7 +55,7 @@ while(my $row = $sth->fetchrow_hashref)
 
 
 # Grab current list of talks online
-
+my @currently_online_talks;
 # Produce output
 
 # Set up the HTML header
@@ -112,25 +108,41 @@ END
 $output_html .= <<END;
 <div id="transcode_queue" class="blue_box">
 <h3>Transcode Queue</h3>
-<table>
-<form>
-<tr><td>Talk ID</td><td>Priority (Low - Med - High)</td></tr>
 END
 
-foreach my $talk (@transcode_queue)
-{
-	$output_html .= "<tr><td>$talk->{talk_id}</td><td>";
-	for (1..3) {
-		$output_html .= "<input type='radio' name='talk_$talk->{talk_id}_priority'";
-		$output_html .= $talk->{priority} == $_ ? "checked" : "";
-		$output_html .= ">";
+if(@transcode_queue) {
+
+	$output_html .= <<END;
+<table>
+<tr><td>Talk ID</td><td>Priority (Low - Med - High)</td></tr>
+<form method="post" action="admin.plx">
+END
+
+	foreach my $talk (@transcode_queue)
+	{
+		$output_html .= "<tr><td>$talk->{talk_id}</td><td>";
+		for (1..3) {
+			$output_html .= "<input type='radio' name='talk_$talk->{talk_id}_priority'";
+			$output_html .= $talk->{priority} == $_ ? "checked" : "";
+			$output_html .= ">";
+		}
+		$output_html .= "</td></tr>";
 	}
-	$output_html .= "</td></tr>";
+
+
+	$output_html .= <<END;
+</table>
+<input type="submit" value="Update queue" />
+</form>
+END
+
+} else {
+
+	$output_html .= "The transcode queue is currently empty";
+
 }
 
 $output_html .= <<END;
-</table>
-</form>
 </div>
 END
 
@@ -138,32 +150,82 @@ END
 
 $output_html .= <<END;
 <div id="upload_queue" class="blue_box">
-<h3>Upload Queue</h3>
-<table>
-<form>
-<tr><td>Talk ID</td><td>Priority (Low - Med - High)</td></tr>
+<h3>Upload Queue - Currently uploading: gb11-110</h3>
 END
 
-foreach my $talk (@upload_queue)
-{
-        $output_html .= "<tr><td>$talk->{talk_id}</td><td>";
-        for (1..3) {
-                $output_html .= "<input type='radio' name='talk_$talk->{talk_id}_priority'";
-                $output_html .= $talk->{priority} == $_ ? "checked" : "";
-                $output_html .= ">";
+if(@upload_queue) {
+
+        $output_html .= <<END;
+<table>
+<tr><td>Talk ID</td><td>Priority (Low - Med - High)</td></tr>
+<form method="post" action="admin.plx">
+END
+
+        foreach my $talk (@upload_queue)
+        {
+                $output_html .= "<tr><td>$talk->{talk_id}</td><td>";
+                for (1..3) {
+                        $output_html .= "<input type='radio' name='talk_$talk->{talk_id}_priority'";
+                        $output_html .= $talk->{priority} == $_ ? "checked" : "";
+                        $output_html .= ">";
+                }
+                $output_html .= "</td></tr>";
         }
-        $output_html .= "</td></tr>";
+
+
+        $output_html .= <<END;
+</table>
+<input type="submit" value="Update queue" />
+</form>
+END
+
+} else {
+        $output_html .= "The upload queue is currently empty";
+}
+
+$output_html .= <<END;
+</div>
+END
+
+$output_html .= <<END;
+
+<div id="current_online_talks" class="blue_box">
+<h3>Talks currently online</h3>
+END
+
+if(@currently_online_talks) {
+
+        $output_html .= <<END;
+<table>
+<tr><td>Talk ID</td><td>Suspend from sale</td></tr>
+END
+
+        foreach my $talk (@currently_online_talks)
+        {
+		$output_html .= "<form method='post' action='admin.plx'>";
+                $output_html .= "<tr><td>$talk->{talk_id}</td><td>";
+                $output_html .= "<input type='hidden' name='talk_$talk->{talk_id}_suspend'>";
+		$output_html .= "<input type='submit' value='Suspend' />";
+                $output_html .= "</td></tr>";
+		$output_html .= "</form>";
+        }
+        
+
+        $output_html .= <<END;
+</table>
+END
+
+} else {
+        $output_html .= "There are no talks currently online";
 }
 
 
 
 $output_html .= <<END;
-</table>
-</form>
+
 </div>
 END
 
-push @debug_messages, "test!";
 if(@debug_messages){
 
 	$output_html .= <<END;
