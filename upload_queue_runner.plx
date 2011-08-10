@@ -21,6 +21,10 @@ require "./environ.pm";
 our $dbh;
 our $conf;
 
+my $short_year = $1 if $conf->{'gb_short_year'} =~ /([0-9]{2}/;
+my $rsync_host = $1 if $conf->{'rsync_host'} =~ /([a-zA-Z0-9\.]+/;
+my $rsync_user = $1 if $conf->{'rsync_user'} =~ /([a-zA-Z0-9\.]+/;
+my $rsync_path = $1 if $conf->{'rsync_path'} =~ /([a-zA-Z0-9\.\/]+/;
 my $sth;
 
 setlogsock('unix');
@@ -29,7 +33,7 @@ $ENV{PATH} = "/bin:/usr/bin";
 
 $SIG{ALRM} = sub {
 
-	openlog('gb_talks_upload_queue_runner','','user');
+	openlog('gb_talks_upload','','user');
 	syslog('err', 'Process took too long to complete - maybe rsync died?');
 	closelog;
 
@@ -61,15 +65,15 @@ if ( $current_uploads <= $max_uploads )
 	alarm(3600); # Let the script run for an hour. If it takes longer than that, we want to quit, log any results, and let another process start up to resume the transfer. 
 	if($talk_id)
 	{	
-		my $mp3_filename = "gb$conf->{'gb_short_year'}-$conf->{'talk_id'}" . "mp3.mp3";
-		my $snip_filename = "gb$conf->{'gb_short_year'}-$conf->{'talk_id'}" . "snip.mp3";
+		my $mp3_filename = "gb$short_year-$talk_id" . "mp3.mp3";
+		my $snip_filename = "gb$short_year-$talk_id" . "snip.mp3";
 		$0 = "upload_queue_runner.plx - $mp3_filename";	
 		
 		# Upload the snip file
-		system("rsync --partial upload_queue/$snip_filename $conf->{'rsync_user'}\@$conf->{'rsync_host'}:$conf->{'rsync_path'}/$snip_filename");
+		system("rsync --partial upload_queue/$snip_filename $rsync_user\@$rsync_host:$rsync_path/$snip_filename");
 
 		# Upload the actual mp3
-		system("rsync --partial upload_queue/$mp3_filename $conf->{'rsync_user'}\@$conf->{'rsync_host'}:$conf->{'rsync_path'}/$mp3_filename");
+		system("rsync --partial upload_queue/$mp3_filename $rsync_user\@$rsync_host:$rsync_path/$mp3_filename");
 
 		# Check what return code rsync gave to determine how it did at the upload
 		if ($? == -1) {
@@ -91,7 +95,7 @@ if ( $current_uploads <= $max_uploads )
 			$ctx->add($conf=>{'api_secret'});
 			# Make an API call to confirm that the talk on the server matches the one locally
 			# and go live if it does
-			my $api_url = $conf->{'api_host'} . "GB$conf->{'gb_short_year'}-$conf->{'talk_id'}";
+			my $api_url = $conf->{'api_host'} . "GB$short_year-$talk_id";
 			my $browser = LWP::UserAgent->new;
 			my $response = $browser->post("$api_url", [action => 'make-available', checksum => $file_md5, sig => $ctx->hexdigest ]);		
 			if ($response->{_rc} == 200) { # If the API call returns 200 (OK) 
