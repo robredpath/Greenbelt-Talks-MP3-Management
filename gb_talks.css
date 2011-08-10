@@ -105,6 +105,28 @@
         margin: 10px;
 }
 
+.blue_box_right {
+        float:right;
+        width: 340px;
+	right: -400px;
+        text-align: left;
+        background-color: rgb(200,200,255);
+        padding:10px;
+        border: 1px solid rgb(100,100,255);
+        margin: 10px;
+}
+
+.blue_box_left {
+        float: left;
+        width: 340px;
+	right: 0px;
+        text-align: left;
+        background-color: rgb(200,200,255);
+        padding:10px;
+        border: 1px solid rgb(100,100,255);
+        margin: 10px;
+}
+
 .green_box {
         position: relative;
         width: 800px;
@@ -114,6 +136,4 @@
         border: 1px solid rgb(100,255,100);
         margin: 10px;
 }
-
-
 
