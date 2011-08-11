@@ -16,21 +16,21 @@ use DBI;
 use Sys::Syslog qw/ :DEFAULT setlogsock /;
 use LWP;
 use Digest::MD5;
+use Data::Dumper;
 
 require "./environ.pm";
 our $dbh;
 our $conf;
 
-my $short_year = $1 if $conf->{'gb_short_year'} =~ /([0-9]{2}/;
-my $rsync_host = $1 if $conf->{'rsync_host'} =~ /([a-zA-Z0-9\.]+/;
-my $rsync_user = $1 if $conf->{'rsync_user'} =~ /([a-zA-Z0-9\.]+/;
-my $rsync_path = $1 if $conf->{'rsync_path'} =~ /([a-zA-Z0-9\.\/]+/;
+my $short_year = $1 if $conf->{'gb_short_year'} =~ /([0-9]{2})/;
+my $rsync_host = $1 if $conf->{'rsync_host'} =~ /([a-zA-Z0-9\.]+)/;
+my $rsync_user = $1 if $conf->{'rsync_user'} =~ /([a-zA-Z0-9\.]+)/;
+my $rsync_path = $1 if $conf->{'rsync_path'} =~ /([a-zA-Z0-9\.\/~]+)/;
 my $sth;
 
 setlogsock('unix');
 
 $ENV{PATH} = "/bin:/usr/bin";
-
 $SIG{ALRM} = sub {
 
 	openlog('gb_talks_upload','','user');
@@ -39,7 +39,6 @@ $SIG{ALRM} = sub {
 
 	die "Process took too long to complete - maybe rsync died?\n";
 };
-
 
 # Create a lockfile
 `touch /var/run/gb_upload$$`;
@@ -83,7 +82,8 @@ if ( $current_uploads <= $max_uploads )
 			log_it(printf "rsync for $mp3_filename: child died with signal %d, %s coredump\n", ($? & 127), ($? & 128) ? "with" : "without");
 		}
 		else { # If we succeeded
-			log_it(printf "rsync for $mp3_filename: child exited with value %d\n", $? >> 8);
+			my $log_message = sprintf "rsync for $mp3_filename: child exited with value %d\n", $? >> 8;
+			log_it("info", $log_message);
 			my $ctx = Digest::MD5->new; 
 			open FILE, "<upload_queue/$mp3_filename";
 			binmode(FILE);
@@ -92,10 +92,10 @@ if ( $current_uploads <= $max_uploads )
 			}
 			my $file_md5 = $ctx->hexdigest;
 			$ctx->add("action=make-available&checksum=$file_md5");
-			$ctx->add($conf=>{'api_secret'});
+			$ctx->add($conf->{'api_secret'});
 			# Make an API call to confirm that the talk on the server matches the one locally
 			# and go live if it does
-			my $api_url = $conf->{'api_host'} . "GB$short_year-$talk_id";
+			my $api_url = $conf->{'api_url'} . "GB$short_year-$talk_id";
 			my $browser = LWP::UserAgent->new;
 			my $response = $browser->post("$api_url", [action => 'make-available', checksum => $file_md5, sig => $ctx->hexdigest ]);		
 			if ($response->{_rc} == 200) { # If the API call returns 200 (OK) 
@@ -124,18 +124,18 @@ else
 
 sub log_it
 {
-	my ($log_level, $log_message) = $@;
-	openlog('gb_talks_upload_queue_runner','','user');
-        syslog($log_level, $log_message);
+	my ($log_level, $message) = @_;
+	openlog('gb_talks_upload','ndelay,pid','user');
+        syslog($log_level, $message);
         closelog;
 }
 
 sub email_it
 {
-	my ($subject, $content) = $@;
-	open SENDMAIL, "|sendmail";
-	print SENDMAIL "Subject: GB Talks (upload_queue_runner.plx) Alert: $subject";
-	print SENDMAIL "To: $conf->{'admin_contact'}";
+	my ($subject, $content) = @_;
+	open SENDMAIL, ">local_email";
+	print SENDMAIL "Subject: GB Talks (upload_queue_runner.plx) Alert: $subject\n";
+	print SENDMAIL "To: $conf->{'admin_contact'}\n";
 	print SENDMAIL "Content-type: text/plain\n\n";
 	print SENDMAIL $content;
 	close SENDMAIL;
