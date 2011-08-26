@@ -54,7 +54,7 @@ if ( $current_transcodes <= $max_transcodes )
 	
 	if ($talk_id)
 	{	
-		$0 = "transcode_queue_runner.plx - gb$short_year-$talk_id.mp3";	
+		$0 = "transcode_queue_runner.plx - gb$short_year-$talk_id" . "mp3.mp3";	
 	
 		# Get the metadata
 		$sth = $dbh->prepare("SELECT speaker, title FROM talks WHERE id=?");
@@ -72,7 +72,10 @@ if ( $current_transcodes <= $max_transcodes )
 		my $lame_data = " --id3v2-only --tt '$talk_title' --ta '$talk_speaker' --tl 'Greenbelt Festival Talks 20$short_year' --ty 20$short_year --tn $talk_id";
 
 		# Run the transcode job
-		system("lame $lame_params $lame_data ./transcode_queue/gb$short_year-$talk_id.mp3 ./upload_queue/gb$short_year-$talk_id.mp3");	
+		my $lame_command = "lame $lame_params $lame_data ./transcode_queue/gb$short_year-$talk_id" .  "mp3.mp3 ./upload_queue/gb$short_year-$talk_id" . "mp3.mp3";	
+		system($lame_command);
+
+		# TODO: Add return code checking
 
 		# Remove the item from the queue
 		$sth = $dbh->prepare('DELETE FROM transcode_queue where talk_id=?');

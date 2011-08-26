@@ -36,8 +36,6 @@ my @debug_messages;
 
 my $post_data = CGI->new;
 
-push @debug_messages, Dumper($post_data);
-
 # Grab current upload queue
 my @upload_queue;
 $sth = $dbh->prepare("SELECT talk_id, priority, sequence FROM upload_queue ORDER BY priority DESC, sequence ASC");
@@ -240,33 +238,27 @@ END
 $output_html .= <<END;
 
 <div id="current_online_talks" class="blue_box">
-<h3>Talks currently online</h3>
-END
-
-if(@currently_online_talks) {
-
-        $output_html .= <<END;
-<table>
-<tr><td>Talk ID</td><td>Suspend from sale</td></tr>
-
+<h3>Suspend Talk From Sale</h3>
 <form method="post">
 Talk ID (eg 100) <input type="text" />
 <input type="hidden" name="form_name" value="suspend" />
 <input type ="submit" value="Suspend from sale" />
 </form>
-</table>
-END
-
-} else {
-        $output_html .= "There are no talks currently online";
-}
-
-
-
-$output_html .= <<END;
-
 </div>
 END
+
+# Form to allow free entry of API fields, if needed
+
+$output_html .= <<END;
+<div id="custom_api" class="blue_box">
+<h2>Custom API Call</h2>
+<form method="post">
+TODO: Implement me!
+</form>
+</div>
+END
+
+# Print out any debug messages, if there are any
 
 if(@debug_messages){
 

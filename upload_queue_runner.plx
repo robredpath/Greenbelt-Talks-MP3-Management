@@ -28,15 +28,19 @@ my $rsync_user = $1 if $conf->{'rsync_user'} =~ /([a-zA-Z0-9\.]+)/;
 my $rsync_path = $1 if $conf->{'rsync_path'} =~ /([a-zA-Z0-9\.\/~]+)/;
 my $sth;
 
-setlogsock('unix');
+sub log_it {
+        my $message = @_[0];
+        open LOG, ">>upload_log" or die $!;
+        my $date = chomp(`date`);
+        print LOG "[$date] [$$] [$message]";
+        close LOG;
+}
+
 
 $ENV{PATH} = "/bin:/usr/bin";
 $SIG{ALRM} = sub {
 
-	openlog('gb_talks_upload','','user');
-	syslog('err', 'Process took too long to complete - maybe rsync died?');
-	closelog;
-
+	log_it("Upload process killed by alarm - maybe rsync died?");
 	die "Process took too long to complete - maybe rsync died?\n";
 };
 
@@ -61,6 +65,8 @@ if ( $current_uploads <= $max_uploads )
 	}
 	my $talk_id = pop @queue;
 	
+	log_it("No talk - aborting") unless $talk_id;
+
 	alarm(3600); # Let the script run for an hour. If it takes longer than that, we want to quit, log any results, and let another process start up to resume the transfer. 
 	if($talk_id)
 	{	
@@ -68,22 +74,59 @@ if ( $current_uploads <= $max_uploads )
 		my $snip_filename = "gb$short_year-$talk_id" . "snip.mp3";
 		$0 = "upload_queue_runner.plx - $mp3_filename";	
 		
+		log_it("Uploading $snip_filename");	
+
 		# Upload the snip file
 		system("rsync --partial upload_queue/$snip_filename $rsync_user\@$rsync_host:$rsync_path/$snip_filename");
 
+		my $snip_upload_succeeded = 0;
+		my $snip_md5;
+
+		# Check what return code rsync gave to determine how it did at the upload
+
+		if ($? == -1) {
+                        log_it("Failed to run rsync for snippet $snip_filename: $!\n");
+                }
+                elsif ($? & 127) {
+                        log_it(sprintf "rsync for snippet $snip_filename: child died with signal %d, %s coredump\n", ($? & 127), ($? & 128) ? "with" : "without");
+                }
+                else { 
+			$snip_upload_succeeded = 1;
+			my $log_message = sprintf "rsync for snippet $snip_filename: child exited with value %d\n", $? >> 8;
+                        log_it($log_message);
+                        my $ctx = Digest::MD5->new;
+                        open FILE, "<upload_queue/$snip_filename";
+                        binmode(FILE);
+                        while(<FILE>) {
+                                $ctx->add($_);
+                        }
+                        $snip_md5 = $ctx->hexdigest;
+		}
+
+
 		# Upload the actual mp3
+		log_it("Uploading $mp3_filename");
 		system("rsync --partial upload_queue/$mp3_filename $rsync_user\@$rsync_host:$rsync_path/$mp3_filename");
+
+		my $mp3_upload_succeeded;
+		my $mp3_md5;
+
 
 		# Check what return code rsync gave to determine how it did at the upload
 		if ($? == -1) {
-			log_it('err', "Failed to run rsync for file $mp3_filename: $!\n");
+			log_it("Failed to run rsync for file $mp3_filename: $!");
 		}	
 		elsif ($? & 127) {
-			log_it(printf "rsync for $mp3_filename: child died with signal %d, %s coredump\n", ($? & 127), ($? & 128) ? "with" : "without");
+			log_it(sprintf "rsync for $mp3_filename: child died with signal %d, %s coredump", ($? & 127), ($? & 128) ? "with" : "without");
 		}
 		else { # If we succeeded
-			my $log_message = sprintf "rsync for $mp3_filename: child exited with value %d\n", $? >> 8;
-			log_it("info", $log_message);
+			my $log_message = sprintf "rsync for $mp3_filename: child exited with value %d", $? >> 8;
+			log_it($log_message);
+			$mp3_upload_succeeded = 1;
+		}
+		
+		if($snip_upload_succeeded && $mp3_upload_succeeded)
+		{	
 			my $ctx = Digest::MD5->new; 
 			open FILE, "<upload_queue/$mp3_filename";
 			binmode(FILE);
@@ -91,13 +134,15 @@ if ( $current_uploads <= $max_uploads )
 				$ctx->add($_);
 			}
 			my $file_md5 = $ctx->hexdigest;
-			$ctx->add("action=make-available&checksum=$file_md5");
+			
+			$ctx->add("action=make-available&checksum=$file_md5&snippet_checksum=$snip_md5");
 			$ctx->add($conf->{'api_secret'});
-			# Make an API call to confirm that the talk on the server matches the one locally
-			# and go live if it does
+
+			# Try to send the talk live. Log any errors. 
+
 			my $api_url = $conf->{'api_url'} . "GB$short_year-$talk_id";
 			my $browser = LWP::UserAgent->new;
-			my $response = $browser->post("$api_url", [action => 'make-available', checksum => $file_md5, sig => $ctx->hexdigest ]);		
+			my $response = $browser->post("$api_url", [action => 'make-available', checksum => $file_md5, snippet_checksum => $snip_md5, sig => $ctx->hexdigest ]);		
 			if ($response->{_rc} == 200) { # If the API call returns 200 (OK) 
 				# Remove the item from the queue
 				$sth = $dbh->prepare('DELETE FROM upload_queue where talk_id=?');
@@ -105,7 +150,7 @@ if ( $current_uploads <= $max_uploads )
 			}
 			else {
 				my $response_dump = Dumper($response);
-				email_it("API call failed", "The API call for $mp3_filename failed. Here's the response: \n\n$response_dump");
+				log_it("API call for $mp3_filename failed. Here's the response: \n\n$response_dump");
 			}	
 			
 			
@@ -116,27 +161,9 @@ if ( $current_uploads <= $max_uploads )
 }
 else
 {
+	log_it("Aborting - too many upload jobs already running. Maybe the lockfile needs to be cleared?");
 	die ("Too many upload jobs already running");
 }
 
 # Remove lockfile
 `rm /var/run/gb_upload$$`;
-
-sub log_it
-{
-	my ($log_level, $message) = @_;
-	openlog('gb_talks_upload','ndelay,pid','user');
-        syslog($log_level, $message);
-        closelog;
-}
-
-sub email_it
-{
-	my ($subject, $content) = @_;
-	open SENDMAIL, ">local_email";
-	print SENDMAIL "Subject: GB Talks (upload_queue_runner.plx) Alert: $subject\n";
-	print SENDMAIL "To: $conf->{'admin_contact'}\n";
-	print SENDMAIL "Content-type: text/plain\n\n";
-	print SENDMAIL $content;
-	close SENDMAIL;
-}
