@@ -89,7 +89,7 @@ if ($post_data->param('talk_id') && $post_data->upload('talk_data') && $post_dat
 
 	# Add to transcode queue
 	warn($talk_id);
-	$sth = $dbh->prepare("INSERT INTO transcode_queue(`sequence`,`priority`,`talk_id`) VALUES (NULL,5,?)");
+	$sth = $dbh->prepare("INSERT INTO transcode_queue(`sequence`,`priority`,`talk_id`) VALUES (NULL,2,?)");
 	$rv = $sth->execute($talk_id);
 	# Mark as uploaded
 	$sth = $dbh->prepare("UPDATE `talks` SET `uploaded`=1 where `id`=?");
@@ -141,9 +141,10 @@ END
 
 $sth  = $dbh->prepare("SELECT id FROM talks WHERE uploaded = 0");
 $sth->execute;
-foreach ($sth->fetchrow_array)
+my $id;
+while ( ($id) = $sth->fetchrow_array)
 {
-	$output_html .= "<option value='$_'>gb$conf->{'gb_short_year'}-$_</option>"
+	$output_html .= "<option value='$id'>gb$conf->{'gb_short_year'}-$id</option>"
 }
 
 
