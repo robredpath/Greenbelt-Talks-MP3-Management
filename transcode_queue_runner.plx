@@ -13,6 +13,7 @@ use warnings;
 #####################################################
 
 use DBI;
+chdir "/var/www/html/Greenbelt-Talks-MP3-Management" or log_it("chdir failed");
 
 require "./environ.pm";
 our $dbh;
@@ -22,6 +23,15 @@ my $lame_params = "--abr 96 -q2 --mp3input -S -m j -c";
 my $short_year = $1 if $conf->{'gb_short_year'} =~ /([0-9]{2})/;
 
 $ENV{PATH} = "/bin:/usr/bin";
+
+sub log_it {
+        my $message = $_[0];
+        open LOG, ">>transcode_log" or die $!;
+        my $date = `date`;
+        chomp $date;
+        print LOG "[$date] [$$] [$message]\n";
+        close LOG;
+}
 
 # Create a lockfile
 
@@ -69,24 +79,30 @@ if ( $current_transcodes <= $max_transcodes )
 		my $talk_title = pop @talk_data;
 	
 		# Set up metadata to pass to LAME
-		my $lame_data = " --id3v2-only --tt '$talk_title' --ta '$talk_speaker' --tl 'Greenbelt Festival Talks 20$short_year' --ty 20$short_year --tn $talk_id";
+		my $lame_data = " --id3v2-only --tt \"$talk_title\" --ta \"$talk_speaker\" --tl \"Greenbelt Festival Talks 20$short_year\" --ty 20$short_year --tn $talk_id";
 
 		# Run the transcode job
-		my $lame_command = "lame $lame_params $lame_data ./transcode_queue/gb$short_year-$talk_id" .  "mp3.mp3 ./upload_queue/gb$short_year-$talk_id" . "mp3.mp3";	
-		system($lame_command);
+		my $lame_command = "lame $lame_params $lame_data ./gb_talks_upload/gb$short_year-$talk_id" .  "mp3.mp3 ./upload_queue/gb$short_year-$talk_id" . "mp3.mp3";	
+		my $return = system($lame_command);
 
+		log_it("Transcode result: $? \nReturned data: $return");
+	
 		# TODO: Add return code checking
 
 		# Remove the item from the queue
 		$sth = $dbh->prepare('DELETE FROM transcode_queue where talk_id=?');
 		$sth->execute($talk_id);
+		$sth = $dbh->prepare('INSERT INTO upload_queue(sequence, priority, talk_id) VALUES (NULL,?,?)');
+		$sth->execute(2,$talk_id);
 	} else {
 		warn ("Nothing in queue");
 	}
 }
 else
 {
-	die ("Too many transcode jobs already running");
+	log_it("Too many transcode jobs already running");
+	`rm /var/run/gb_transcode$$`;
+	die;
 }
 
 # Remove lockfile

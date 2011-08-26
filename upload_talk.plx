@@ -27,7 +27,8 @@ use DBI;
 
 # Set up the environment
 $CGI::POST_MAX = 1024 * 512000; # 512MB should be enough for what we're doing!
-my $upload_dir = "./gb_talks_upload";
+my $upload_dir = "./upload_queue";
+my $transcode_dir = "./gb_talks_upload";
 require "./environ.pm";
 our $dbh;
 our $conf;
@@ -74,8 +75,8 @@ if ($post_data->param('talk_id') && $post_data->upload('talk_data') && $post_dat
 
 	# Open file for writing with appropriate name
 	my $mp3_filename = "gb$gb_short_year-$talk_id" . "mp3.mp3";
-	warn "$upload_dir/$mp3_filename";
-	open TALK, ">$upload_dir/$mp3_filename" or warn $!;
+	warn "$transcode_dir/$mp3_filename";
+	open TALK, ">$transcode_dir/$mp3_filename" or warn $!;
 
 	# Write file
 	binmode TALK;

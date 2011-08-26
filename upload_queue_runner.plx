@@ -12,8 +12,9 @@ use warnings;
 #
 #####################################################
 
+chdir "/var/www/html/Greenbelt-Talks-MP3-Management";
+
 use DBI;
-use Sys::Syslog qw/ :DEFAULT setlogsock /;
 use LWP;
 use Digest::MD5;
 use Data::Dumper;
@@ -29,9 +30,10 @@ my $rsync_path = $1 if $conf->{'rsync_path'} =~ /([a-zA-Z0-9\.\/~]+)/;
 my $sth;
 
 sub log_it {
-        my $message = @_[0];
+        my $message = $_[0];
         open LOG, ">>upload_log" or die $!;
-        my $date = chomp(`date`);
+        my $date = `date`;
+	chomp $date;
         print LOG "[$date] [$$] [$message]";
         close LOG;
 }
@@ -147,6 +149,7 @@ if ( $current_uploads <= $max_uploads )
 				# Remove the item from the queue
 				$sth = $dbh->prepare('DELETE FROM upload_queue where talk_id=?');
 				$sth->execute($talk_id);
+				log_it("Upload of talk $talk_id successful");
 			}
 			else {
 				my $response_dump = Dumper($response);
