@@ -97,7 +97,7 @@ if ( $current_transcodes <= $max_transcodes )
 		$sth = $dbh->prepare('UPDATE talks SET available=1 WHERE talk_id=?');
 		$sth->execute($talk_id);
 	} else {
-		warn ("Nothing in queue");
+		log_it("Nothing in queue - terminating");
 	}
 }
 else
