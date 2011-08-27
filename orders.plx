@@ -65,10 +65,10 @@ if($post_data->param('order_id'))
 		$sth = $dbh->prepare("INSERT INTO `orders`(`id`, `additional_talks`) VALUES (?,?)");
 		$sth->execute($new_order->{id}, @additional_talks ? @additional_talks : undef );
 		# add items into order_items table
-		foreach(@this_years_talks)
+		foreach my $talk (@this_years_talks)
 		{
 			$sth = $dbh->prepare("INSERT INTO `order_items`(`order_id`,`talk_id`) VALUES (?,?)"); 
-			$rv = $sth->execute($new_order->{'id'}, $_);
+			$rv = $sth->execute($new_order->{'id'}, $talk);
 		}
 	} else {
 		push @error_messages, "Error: Order $new_order->{id} already exists";
@@ -86,6 +86,8 @@ if($post_data->param('order_complete'))
 		$rv = $sth->execute($_);
 	}	
 }
+
+# TODO: Add box set support
 
 # Get all incomplete orders
 my $saved_orders = { }; 
@@ -223,6 +225,7 @@ $output_html .= <<END;
 <p>Order ID<input type="text" name="order_id"></p>
 <p>Talks. Separate values with spaces. Talks without a prefix are implicitly prefixed gb$gb_short_year- <textarea id="order_items" name="order_items"></textarea></p>
 <p><input type="submit" /></p>
+<p>For box sets, add the individual talks</p>
 </form>
 </div>
 

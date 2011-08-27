@@ -34,7 +34,7 @@ sub log_it {
         open LOG, ">>upload_log" or die $!;
         my $date = `date`;
 	chomp $date;
-        print LOG "[$date] [$$] [$message]";
+        print LOG "[$date] [$$] [$message]\n";
         close LOG;
 }
 
@@ -58,7 +58,7 @@ my $current_uploads = $1 if `ls /var/run/gb_upload* | wc -l` =~ /([0-9]+)/;
 if ( $current_uploads <= $max_uploads )
 {
 	# Get the next talk to upload - highest priority first, oldest first
-	$sth = $dbh->prepare("SELECT talk_id FROM upload_queue ORDER BY priority DESC, sequence DESC LIMIT 1;");
+	$sth = $dbh->prepare("SELECT talk_id FROM upload_queue ORDER BY priority DESC, sequence ASC LIMIT 1;");
 	$sth->execute;
 	my @queue;
 	while (my @data = $sth->fetchrow_array)
@@ -165,6 +165,7 @@ if ( $current_uploads <= $max_uploads )
 else
 {
 	log_it("Aborting - too many upload jobs already running. Maybe the lockfile needs to be cleared?");
+	`rm /var/run/gb_upload$$`;
 	die ("Too many upload jobs already running");
 }
 

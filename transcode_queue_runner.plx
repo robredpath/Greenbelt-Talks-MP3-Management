@@ -94,6 +94,8 @@ if ( $current_transcodes <= $max_transcodes )
 		$sth->execute($talk_id);
 		$sth = $dbh->prepare('INSERT INTO upload_queue(sequence, priority, talk_id) VALUES (NULL,?,?)');
 		$sth->execute(2,$talk_id);
+		$sth = $dbh->prepare('UPDATE talks SET available=1 WHERE talk_id=?');
+		$sth->execute($talk_id);
 	} else {
 		warn ("Nothing in queue");
 	}

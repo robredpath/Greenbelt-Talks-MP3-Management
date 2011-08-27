@@ -17,6 +17,11 @@ Make repo of LQ mp3s available to duplication team - this is currently handled b
 State reporting
 - Generally, scripts should set $0 to their talk ID
 
-Logging - through syslog
-- Upload queue runner log - upload.log
-- Transcode queue runner log - transcode.log
+Logging - directly to filesystem
+- Upload queue runner log - upload_log
+- Transcode queue runner log - transcode_log
+
+TODO:-
+- Add proper box set support
+- Add conf options for directories 
+
