@@ -65,7 +65,10 @@ if ( $current_uploads <= $max_uploads )
 	{
 		push @queue, $data[0]; 
 	}
-	my $talk_id = pop @queue;
+	
+        my $talk_pos = $current_uploads-1;
+        my $talk_id = $queue[$talk_pos];
+
 	
 	log_it("No talk - aborting") unless $talk_id;
 
@@ -154,11 +157,8 @@ if ( $current_uploads <= $max_uploads )
 			else {
 				my $response_dump = Dumper($response);
 				log_it("API call for $mp3_filename failed. Here's the response: \n\n$response_dump");
-			}	
-			
-			
+			}		
 		}
-	
 		alarm(0);
 	}
 }

@@ -53,14 +53,15 @@ if (! -e './transcode_queue')
 if ( $current_transcodes <= $max_transcodes )
 {
 	# Get the next talk to transcode - highest priority first, oldest first
-	$sth = $dbh->prepare("SELECT talk_id FROM transcode_queue ORDER BY priority DESC, sequence DESC LIMIT 1");
-	$sth->execute;
+	$sth = $dbh->prepare("SELECT talk_id FROM transcode_queue ORDER BY priority DESC, sequence DESC LIMIT ?");
+	$sth->execute($current_transcodes);
 	my @queue;
 	while (my @data = $sth->fetchrow_array)
 	{
 		push @queue, $data[0]; 
 	}
-	my $talk_id = pop @queue;
+	my $talk_pos = $current_transcodes-1;
+	my $talk_id = $queue[$talk_pos];
 	
 	if ($talk_id)
 	{	
@@ -94,7 +95,7 @@ if ( $current_transcodes <= $max_transcodes )
 		$sth->execute($talk_id);
 		$sth = $dbh->prepare('INSERT INTO upload_queue(sequence, priority, talk_id) VALUES (NULL,?,?)');
 		$sth->execute(2,$talk_id);
-		$sth = $dbh->prepare('UPDATE talks SET available=1 WHERE talk_id=?');
+		$sth = $dbh->prepare('UPDATE talks SET available=1 WHERE id=?');
 		$sth->execute($talk_id);
 	} else {
 		log_it("Nothing in queue - terminating");

@@ -39,7 +39,12 @@ my $talks = $dbh->selectall_hashref('SELECT `id`, `available` FROM `talks`','id'
 # Get all existing order IDs to handle errors cleanly
 $sth = $dbh->prepare("SELECT `id` from `orders`");
 $sth->execute();
-my $existing_orders = $sth->fetchall_arrayref;
+my @existing_orders;
+while(my @order = $sth->fetchrow_array)
+{
+	push @existing_orders, @order[0];
+}
+
 
 # Get POST data
 my $post_data = CGI->new;
@@ -49,29 +54,27 @@ if($post_data->param('order_id'))
 {
 	# TODO: sanitise data first!
 	$new_order->{'id'}=$post_data->param('order_id');
-	unless(grep /^$new_order->{id}$/, @{$existing_orders} )
+	my @order_items = split(" ",$post_data->param('order_items'));
+	$new_order->{'order_items'} = \@order_items;
+	# parse order items
+	my @this_years_talks;
+	my @additional_talks;
+	foreach(@{$new_order->{'order_items'}})
 	{
-		my @order_items = split(" ",$post_data->param('order_items'));
-		$new_order->{'order_items'} = \@order_items;
-		# parse order items
-		my @this_years_talks;
-		my @additional_talks;
-		foreach(@{$new_order->{'order_items'}})
-		{
-			push @this_years_talks, $_ if /^[0-9]{1,3}$/;
-			push @additional_talks, $_ if /^gb[0-9]{2}-[0-9]{1,3}$/;
-		}
+		push @this_years_talks, $_ if /^[0-9]{1,3}$/;
+		push @additional_talks, $_ if /^gb[0-9]{2}-[0-9]{1,3}$/;
+	}
+	# Create a new order if there isn't one already
+	unless(grep /^$new_order->{id}$/, @existing_orders ) {
 		# add order ID into orders table
 		$sth = $dbh->prepare("INSERT INTO `orders`(`id`, `additional_talks`) VALUES (?,?)");
 		$sth->execute($new_order->{id}, @additional_talks ? @additional_talks : undef );
-		# add items into order_items table
-		foreach my $talk (@this_years_talks)
-		{
-			$sth = $dbh->prepare("INSERT INTO `order_items`(`order_id`,`talk_id`) VALUES (?,?)"); 
-			$rv = $sth->execute($new_order->{'id'}, $talk);
-		}
-	} else {
-		push @error_messages, "Error: Order $new_order->{id} already exists";
+	}
+	# add items into order_items table
+	foreach my $talk (@this_years_talks)
+	{
+		$sth = $dbh->prepare("INSERT INTO `order_items`(`order_id`,`talk_id`) VALUES (?,?)"); 
+		$rv = $sth->execute($new_order->{'id'}, $talk);
 	}
 }
 
@@ -188,31 +191,32 @@ END
 if($post_data->param('order_id'))
 {
 
-$output_html .= <<END;
-
-<div id="confirmation">
-<h3>Results</h3>
-END
-
 	if(@error_messages)
 	{
-		$output_html .= "An error was encountered whilst processing the request:";
-		foreach(@error_messages)
-		{
-			$output_html .= "<p>" . $_ . "</p>";
-		}
-	}
-	else
-	{
-		$output_html .= "Your request has been successfully processed";
-	}
-
-$output_html .= <<END;
-
-</div>
-
+		$output_html .= <<END;
+<div id="error" class="red_box">
 END
 
+                $output_html .= "An error was encountered whilst processing the request:";
+                foreach(@error_messages)
+                {
+                        $output_html .= "<p>" . $_ . "</p>";
+                }
+
+
+		$output_html .= <<END;
+</div>
+END
+
+	} else {
+
+		$output_html .= <<END;
+<div id="confirmation">
+<p>Your request has been successfully processed</p>
+</div>
+END
+
+	}
 
 }
 
@@ -241,10 +245,20 @@ $output_html .= <<END;
 <p>
 END
 
-foreach(sort values %$talks)
+my @avail_talks;
+
+foreach(values %$talks)
 {
-	$output_html .= "$_->{id} " if $_->{available};
+	push @avail_talks, $_->{id} if $_->{available};
 }
+
+@avail_talks = sort { $a <=> $b } @avail_talks;
+
+foreach(@avail_talks)
+{
+	$output_html .= "$_ ";
+}
+
 
 $output_html .= <<END;
 </p>

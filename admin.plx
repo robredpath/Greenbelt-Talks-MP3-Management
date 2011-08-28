@@ -1,4 +1,4 @@
-#!/usr/bin/perl -T
+#!/usr/bin/perl 
 
 use strict;
 use warnings;
@@ -24,7 +24,8 @@ use DBI;
 use CGI;
 use CGI::Carp qw ( fatalsToBrowser );
 use Data::Dumper;
-
+use Digest::MD5;
+use LWP::UserAgent;
 
 require "./environ.pm";
 our $dbh;
@@ -33,6 +34,18 @@ my $sth;
 
 my @error_messages;
 my @debug_messages;
+
+
+sub log_it {
+        my $message = $_[0];
+        open LOG, ">>admin_log" or die $!;
+        my $date = `date`;
+        chomp $date;
+        print LOG "[$date] [$$] [$message]\n";
+        close LOG;
+}
+
+
 
 my $post_data = CGI->new;
 
@@ -97,9 +110,49 @@ if($post_data->{'param'}->{'form_name'})
                 {
                 	push @upload_queue, $row;                                                                                         }
         } elsif (@{$post_data->{'param'}->{'form_name'}}[0] eq "suspend") {
+
+		my $ctx = Digest::MD5->new;
+
+                        $ctx->add("action=suspend");
+                        $ctx->add($conf->{'api_secret'});
+
+                        # Try to suspend the talk. Log any errors. 
+                        
+			my $api_url = $conf->{'api_url'} . "GB11-@{$post_data->{'param'}->{'talk_suspend'}}[0]";
+                        my $browser = LWP::UserAgent->new;
+                        my $response = $browser->post("$api_url", [action => 'suspend', sig => $ctx->hexdigest ]);
+                        if ($response->{_rc} == 200) {
+			
+			}
+			                        else {
+                                my $response_dump = Dumper($response);
+                                log_it("API call for suspending GB11-@{$post_data->{'param'}->{'talk_suspend'}}[0] failed. Here's the response: \n\n$response_dump");
+                        }
+
 	
-	}
+	} elsif (@{$post_data->{'param'}->{'form_name'}}[0] eq "replace") {
+
+                my $ctx = Digest::MD5->new;
+
+                        $ctx->add("action=replace");
+                        $ctx->add($conf->{'api_secret'});
+
+                        # Try to send the talk live. Log any errors. 
+                        
+                        my $api_url = $conf->{'api_url'} . "GB11-@{$post_data->{'param'}->{'talk_replace'}}[0]";
+                        my $browser = LWP::UserAgent->new;
+                        my $response = $browser->post("$api_url", [action => 'replace', sig => $ctx->hexdigest ]);
+                        if ($response->{_rc} == 200) {
+                        
+			} else {
+                        	my $response_dump = Dumper($response);
+                                log_it("API call for replacing GB11-@{$post_data->{'param'}->{'talk_replace'}}[0] failed. Here's the response: \n\n$response_dump");
+                        }
+                    
+                
+       }
 }
+
 
 
 # Produce output
@@ -237,15 +290,30 @@ END
 
 $output_html .= <<END;
 
-<div id="current_online_talks" class="blue_box">
+<div id="suspend" class="blue_box">
 <h3>Suspend Talk From Sale</h3>
 <form method="post">
-Talk ID (eg 100) <input type="text" />
+Talk ID (eg 100) <input type="text" name="talk_suspend"/>
 <input type="hidden" name="form_name" value="suspend" />
 <input type ="submit" value="Suspend from sale" />
 </form>
 </div>
 END
+
+$output_html .= <<END;
+
+<div id="replace" class="blue_box">
+<h3>Replace Talk</h3>
+<form method="post">
+Talk ID (eg 100) <input type="text" name="talk_replace"/>
+<input type="hidden" name="form_name" value="replace" />
+<input type ="submit" value="Replace" />
+<p>Ensure that new talk and snip have been uploaded to server prior to replacing</p>
+</form>
+</div>
+END
+
+
 
 # Form to allow free entry of API fields, if needed
 
