@@ -33,3 +33,6 @@ TODO:-
 - Add confirmation stage to upload to avoid mistakes
 - Add sanity checking to upload page - has a talk finished yet?
 - Add 'replace' checkbox to upload page
+- Add authentication
+- Add more state support to admin functions
+- Add more edit options to orders.plx - 'edit order' function
