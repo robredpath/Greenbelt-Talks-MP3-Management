@@ -22,6 +22,14 @@ Logging - directly to filesystem
 - Transcode queue runner log - transcode_log
 
 TODO:-
+
+- Add support for boundary conditions
+ - Talk not recorded - ensure that this doesn't hold up MP3 orders but alert users to failure
+ - Talk chase - on upload page, ask why talks over x hours old haven't been uploaded yet
+ - Identify orders for talks that are not available so that appropriate action can be taken
+ - Suspend talk from sale affects both website and local MP3 orders (or make it toggle-able).
 - Add proper box set support
 - Add conf options for directories 
-
+- Add confirmation stage to upload to avoid mistakes
+- Add sanity checking to upload page - has a talk finished yet?
+- Add 'replace' checkbox to upload page
