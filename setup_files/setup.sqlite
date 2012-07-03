@@ -9,34 +9,19 @@ CREATE TABLE `orders` (
 `id` INT(3) PRIMARY KEY NOT NULL );
 
 CREATE TABLE  `order_items` (
- `order_id` INT( 3 ) NOT NULL ,
- `talk_id` INT( 3 ) NOT NULL ,
-CONSTRAINT  `pk_order_items` 
-	PRIMARY KEY  `pk_order_items` (  `order_id` ,  `talk_id` ) ,
-CONSTRAINT  `fk_order_items_talks` 
-	FOREIGN KEY  `fk_order_items_talks` (  `talk_id` ) 
-	REFERENCES  `talks` (  `id` ) 
-	ON DELETE NO ACTION ON UPDATE NO ACTION
+  `order_id` INT(3) NOT NULL REFERENCES `orders`(`id`) ON UPDATE RESTRICT ON DELETE RESTRICT,
+  `talk_id` INT(3) NOT NULL REFERENCES `talks`(`id`) ON UPDATE RESTRICT ON DELETE RESTRICT, 
+  PRIMARY KEY  (`order_id`, `talk_id`) 
 );
 
 CREATE TABLE `upload_queue` (
 `sequence` INT(3) PRIMARY KEY NOT NULL,
 `priority` INT(1) NOT NULL,
-`talk_id` INT(3) UNIQUE NOT NULL,
-CONSTRAINT `fk_upload_queue_talks` 
-        FOREIGN KEY `fk_upload_queue_talks`(`talk_id`)
-        REFERENCES `talks`(`id`) 
-        ON DELETE NO ACTION 
-        ON UPDATE NO ACTION);
+`talk_id` INT(3) UNIQUE NOT NULL REFERENCES `talks`(`id`) ON UPDATE RESTRICT ON DELETE RESTRICT);
 
 CREATE TABLE `transcode_queue` (
 `sequence` INT(3) PRIMARY KEY NOT NULL,
 `priority` INT(1) NOT NULL,
-`talk_id` INT(3) UNIQUE NOT NULL,
-CONSTRAINT `fk_transcode_queue_talks` 
-        FOREIGN KEY `fk_transcode_queue_talks`(`talk_id`)
-        REFERENCES `talks`(`id`) 
-        ON DELETE NO ACTION
-        ON UPDATE NO ACTION);
+`talk_id` INT(3) UNIQUE NOT NULL REFERENCES `talks`(`id`) ON UPDATE RESTRICT ON DELETE RESTRICT) ;
 
 
