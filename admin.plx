@@ -3,6 +3,10 @@
 use strict;
 use warnings;
 
+BEGIN {
+        push @INC, '.';
+}
+
 ############################################################
 #
 # admin.plx
@@ -19,7 +23,6 @@ use warnings;
 #
 ############################################################
 
-
 use DBI;
 use CGI;
 use CGI::Carp qw ( fatalsToBrowser );
@@ -27,7 +30,8 @@ use Data::Dumper;
 use Digest::MD5;
 use LWP::UserAgent;
 
-require "./environ.pm";
+use environ;
+
 our $dbh;
 our $conf;
 my $sth;

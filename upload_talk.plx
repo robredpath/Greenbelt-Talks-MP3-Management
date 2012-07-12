@@ -1,6 +1,8 @@
 #!/usr/bin/perl -T
 
-BEGIN { push @INC, "."; }
+BEGIN {
+        push @INC, '.';
+}
 
 use strict;
 use warnings;
@@ -25,11 +27,12 @@ use CGI;
 use CGI::Carp qw ( fatalsToBrowser ); 
 use DBI;
 
+use environ;
+
 # Set up the environment
 $CGI::POST_MAX = 1024 * 512000; # 512MB should be enough for what we're doing!
 my $upload_dir = "./upload_queue";
 my $transcode_dir = "./gb_talks_upload";
-require "./environ.pm";
 our $dbh;
 our $conf;
 my $gb_short_year = $1 if $conf->{'gb_short_year'} =~ /(^[0-9]{2}$)/;

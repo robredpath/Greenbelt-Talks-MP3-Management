@@ -1,6 +1,11 @@
-#!/usr/bin/perl -T
+#!/usr/bin/perl
+
 use strict;
 use warnings;
+
+BEGIN {
+	push @INC, '.';
+}
 
 #************************************************************************
 # orders.plx
@@ -23,8 +28,11 @@ use CGI::Carp qw ( fatalsToBrowser );
 use DBI;
 use Data::Dumper;
 
-require "./environ.pm";
+use environ;
 our $dbh;
+
+warn Dumper($dbh);
+
 our $conf;
 my $gb_short_year = $1 if $conf->{'gb_short_year'} =~ /([0-9]{2})/;
 my $sth;

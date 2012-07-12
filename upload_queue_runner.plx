@@ -1,6 +1,8 @@
 #!/usr/bin/perl -T
 
-BEGIN { push @INC, "."; }
+BEGIN {
+        push @INC, '.';
+}
 
 use strict;
 use warnings;
@@ -19,7 +21,8 @@ use LWP;
 use Digest::MD5;
 use Data::Dumper;
 
-require "./environ.pm";
+use environ;
+
 our $dbh;
 our $conf;
 

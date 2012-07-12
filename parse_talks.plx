@@ -3,10 +3,15 @@
 use strict;
 use warnings;
 
+BEGIN {
+        push @INC, '.';
+}
+
 use DBI;
 use Text::CSV;
 
-require "./environ.pm";
+use environ;
+
 our $dbh;
 our $conf;
 my $gb_short_year = $1 if $conf->{'gb_short_year'} =~ /(^[0-9]{2}$)/;

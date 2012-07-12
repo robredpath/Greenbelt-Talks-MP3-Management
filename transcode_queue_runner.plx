@@ -1,6 +1,8 @@
 #!/usr/bin/perl -T
 
-BEGIN { push @INC, "."; }
+BEGIN {
+        push @INC, '.';
+}
 
 use strict;
 use warnings;
@@ -13,9 +15,10 @@ use warnings;
 #####################################################
 
 use DBI;
-chdir "/var/www/html/Greenbelt-Talks-MP3-Management" or log_it("chdir failed");
+chdir "/var/www/html/" or log_it("chdir failed");
 
-require "./environ.pm";
+use environ;
+
 our $dbh;
 our $conf;
 my $sth;
