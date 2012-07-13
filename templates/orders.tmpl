@@ -1,0 +1,94 @@
+<html>
+<head>
+<link rel="stylesheet" type="text/css" href="gb_talks.css" />
+</head>
+<body>
+<div id="page">
+<div id="logo">
+<img src="gb_logo.png" />
+</div>
+<div id="title">
+<h2>Greenbelt Talks Team - mp3 orders</h2>
+</div>
+
+[% IF error_messages AND is_response %]
+
+<div id="error" class="red_box">
+
+<p>An error was encountered whilst processing the request:</p>
+
+	[% FOREACH message in error_messages %]
+
+	<p> [% message %] </p>
+	
+	[% END %]
+
+</div>
+
+[% ELSE %]
+
+<div id="confirmation" class="green_box">
+
+<p>Your request has been successfully processed</p>
+
+</div>
+
+[% END %]
+
+<div id="new_order_form">
+<form method="post">
+<h3>New Order</h3>
+<p>Order ID<input type="text" name="order_id"></p>
+<p>Talks. Separate values with spaces. Talks without a prefix are implicitly prefixed gb[% gb_short_year %]- </p>
+<p><textarea id="order_items" name="order_items"></textarea></p>
+<p><input type="submit" /></p>
+<p>For box sets, add the individual talks</p>
+</form>
+</div>
+
+<div id="available_talks">
+<h3>Available Talks</h3>
+<p>
+
+
+[% FOREACH talk IN available_talks %]
+[% talk %], 
+[% END %]
+
+</p>
+
+<div id="saved_orders">
+<h3>Pending Orders</h3>
+<form method="POST">
+<table>
+<tr><td>Order ID</td><td>Talks in Order</td><td>F?</td><td>Complete?</td></tr>
+
+[% FOREACH order IN fulfillable_orders %]
+
+<tr><td>[% order.id %]</td>
+
+[% FOREACH talk IN order.talks.nsort %]
+
+[% talk %]
+
+[% END %]
+
+<td></td><td>F</td><td><input type='checkbox' name='order_complete' value='[% order.id %]'></td></tr>
+
+[% END %]
+
+[% FOREACH order in non_fulfillable_orders %]
+
+<tr><td>[% order.id %]</td>
+
+[% FOREACH talk IN order.talks.nsort %]
+
+[% talk %]
+
+[% END %]
+
+
+<td></td></td><td>&nbsp;</td><td><input type='checkbox' name='order_complete' value='[% order.id %]'></td></tr>
+
+[% END %]
+

@@ -27,6 +27,7 @@ use CGI;
 use CGI::Carp qw ( fatalsToBrowser );
 use DBI;
 use Data::Dumper;
+use Template;
 
 use GB;
 
@@ -176,82 +177,15 @@ foreach(@orders)
 }
 
 
-# Set up the HTML header
+my $output_html;
 
-my $output_html = <<END;
+my $is_response;
 
-<html>
-<head>
-<link rel="stylesheet" type="text/css" href="gb_talks.css" />
-</head>
-<body>
-<div id="page">
-<div id="logo">
-<img src="gb_logo.png" />
-</div>
-<div id="title">
-<h2>Greenbelt Talks Team - mp3 orders</h2>
-</div>
-END
-
-# Was there any POST data? If so, output confirmation that the request has been processed
-
-if($post_data->param('order_id'))
-{
-
-	if(@error_messages)
-	{
-		$output_html .= <<END;
-<div id="error" class="red_box">
-END
-
-                $output_html .= "An error was encountered whilst processing the request:";
-                foreach(@error_messages)
-                {
-                        $output_html .= "<p>" . $_ . "</p>";
-                }
-
-
-		$output_html .= <<END;
-</div>
-END
-
-	} else {
-
-		$output_html .= <<END;
-<div id="confirmation">
-<p>Your request has been successfully processed</p>
-</div>
-END
-
-	}
-
+if($post_data->param('order_id')) {
+	$is_response = 1;
 }
 
-# Form for adding a new order - order ID, order items as a space-separated list. 
-$output_html .= <<END;
 
-<div id="new_order_form">
-<form method="post">
-<h3>New Order</h3>
-<p>Order ID<input type="text" name="order_id"></p>
-<p>Talks. Separate values with spaces. Talks without a prefix are implicitly prefixed gb$gb_short_year- <textarea id="order_items" name="order_items"></textarea></p>
-<p><input type="submit" /></p>
-<p>For box sets, add the individual talks</p>
-</form>
-</div>
-
-END
-
-
-# Output list of all talks currently available
-
-$output_html .= <<END;
-
-<div id="available_talks">
-<h3>Available Talks</h3>
-<p>
-END
 
 my @avail_talks;
 
@@ -262,29 +196,8 @@ foreach(values %$talks)
 
 @avail_talks = sort { $a <=> $b } @avail_talks;
 
-foreach(@avail_talks)
-{
-	$output_html .= "$_ ";
-}
-
-
-$output_html .= <<END;
-</p>
-</div>
-
-END
-
 
 # Output details of all unfulfilled orders
-
-$output_html .= <<END;
-
-<div id="saved_orders">
-<h3>Pending Orders</h3>
-<form method="POST">
-<table>
-<tr><td>Order ID</td><td>Talks in Order</td><td>F?</td><td>Complete?</td></tr>
-END
 
 foreach(sort keys %$saved_orders)
 {
@@ -296,6 +209,8 @@ foreach(sort keys %$saved_orders)
 	}
 	$output_html .= "</td><td>F</td><td><input type='checkbox' name='order_complete' value='$_'></td></tr>";
 }
+
+# Get details of all un-fulfillable orders
 
 foreach(sort keys %$saved_orders)
 {
