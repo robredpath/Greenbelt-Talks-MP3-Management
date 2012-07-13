@@ -1,6 +1,17 @@
 This is the order processing system for Greenbelt Festival's Talks Team.
 
-Installation:- Copy gb_talks.conf to /etc and make it readable by the appropriate users. We recommend that these scripts be executed as as reduced-priviledge user. TODO: make this into an RPM. 
+Prerequisites:-
+
+Perl 5 with
+LWP
+CGI
+Digest::MD5
+
+Installation:- 
+Copy gb_talks.conf to somewhere non-world-readable, make it readable by your web server and set it up as you want. 
+We recommend that these scripts be executed as as reduced-privilege user. 
+Create a database - setup_scripts/ should create the correct schema for the latest version of the scripts
+
 
 Inputs:-
 The list of talks for the festival - CSV file, parse_talks.plx
