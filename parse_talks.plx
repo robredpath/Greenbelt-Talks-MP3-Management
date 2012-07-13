@@ -10,10 +10,12 @@ BEGIN {
 use DBI;
 use Text::CSV;
 
-use environ;
+use GB;
 
-our $dbh;
-our $conf;
+my $gb = GB->new("../gb_talks.conf");
+my $dbh = $gb->{db};
+my $conf = $gb->{conf};
+
 my $gb_short_year = $1 if $conf->{'gb_short_year'} =~ /(^[0-9]{2}$)/;
 my $sth;
 

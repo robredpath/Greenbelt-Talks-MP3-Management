@@ -17,10 +17,12 @@ use warnings;
 use DBI;
 chdir "/var/www/html/" or log_it("chdir failed");
 
-use environ;
+use GB;
 
-our $dbh;
-our $conf;
+my $gb = GB->new("../gb_talks.conf");
+my $dbh = $gb->{db};
+my $conf = $gb->{conf};
+
 my $sth;
 my $lame_params = "--abr 96 -q2 --mp3input -S -m j -c";
 my $short_year = $1 if $conf->{'gb_short_year'} =~ /([0-9]{2})/;

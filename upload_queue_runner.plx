@@ -14,17 +14,18 @@ use warnings;
 #
 #####################################################
 
-chdir "/var/www/html/Greenbelt-Talks-MP3-Management";
+chdir "/var/www/html/";
 
 use DBI;
 use LWP;
 use Digest::MD5;
 use Data::Dumper;
 
-use environ;
+use GB;
 
-our $dbh;
-our $conf;
+my $gb = GB->new("../gb_talks.conf");
+my $dbh = $gb->{db};
+my $conf = $gb->{conf};
 
 my $short_year = $1 if $conf->{'gb_short_year'} =~ /([0-9]{2})/;
 my $rsync_host = $1 if $conf->{'rsync_host'} =~ /([a-zA-Z0-9\.]+)/;

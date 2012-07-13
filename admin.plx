@@ -30,10 +30,13 @@ use Data::Dumper;
 use Digest::MD5;
 use LWP::UserAgent;
 
-use environ;
+use GB;
 
-our $dbh;
-our $conf;
+my $gb = GB->new("../gb_talks.conf");
+my $dbh = $gb->{db};
+
+
+my $conf = $gb->{conf};
 my $sth;
 
 my @error_messages;

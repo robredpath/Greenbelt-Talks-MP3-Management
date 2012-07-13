@@ -28,12 +28,12 @@ use CGI::Carp qw ( fatalsToBrowser );
 use DBI;
 use Data::Dumper;
 
-use environ;
-our $dbh;
+use GB;
 
-warn Dumper($dbh);
+my $gb = GB->new("../gb_talks.conf");
+my $dbh = $gb->{db}; 
+my $conf = $gb->{conf};
 
-our $conf;
 my $gb_short_year = $1 if $conf->{'gb_short_year'} =~ /([0-9]{2})/;
 my $sth;
 my $rv;
