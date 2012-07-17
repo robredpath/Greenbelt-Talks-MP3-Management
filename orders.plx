@@ -42,10 +42,28 @@ my $sql;
 my @debug_messages;
 my @error_messages;
 
+my $orders = $dbh->selectall_hashref("SELECT order_id, group_concat(all_talks.id) AS talks, 
+					(group_concat(all_talks.id) <=> group_concat(available_talks.id)) AS fulfillable,
+					completed
+					FROM orders 
+						INNER JOIN order_items 
+							ON orders.id=order_items.order_id 
+						AS all_talks, 
+					orders 
+						INNER JOIN order_items 
+							ON orders.id=order_items.order_id 
+						INNER JOIN (SELECT id, available FROM talks WHERE available=1) talks_a 
+							ON talks_a.id=order_items.talk_id 
+						AS available_talks", ['completed','fulfillable']);
+
+
 # Get all talks
 my $talks = $dbh->selectall_hashref('SELECT `id`, `available` FROM `talks`','id');
 
-# Get all existing order IDs to handle errors cleanly
+# Get available talks
+my $available_talks = $dbh->selectcol_arrayref("SELECT id from talks where available=1");
+
+# Get all existing order IDs so that we can't double-enter.
 $sth = $dbh->prepare("SELECT `id` from `orders`");
 $sth->execute();
 my @existing_orders;
@@ -101,84 +119,6 @@ if($post_data->param('order_complete'))
 
 # TODO: Add box set support
 
-# Get all incomplete orders
-my $saved_orders = { }; 
-$sth = $dbh->prepare("SELECT `id` FROM `orders` WHERE `complete`=0");
-$sth->execute();
-my @orders;
-while (my @data = $sth->fetchrow_array)
-{
-        push @orders, $data[0];
-}
-
-# Get the contents of each order
-foreach(@orders)
-{
-	my @order;
-	$sth = $dbh->prepare("SELECT `talk_id` FROM `order_items` WHERE `order_id`= ?");
-	$sth->execute($_);
-	while (my @data = $sth->fetchrow_array)
-	{ 
-		push @order, $data[0];
-	}
-	$sth = $dbh->prepare("SELECT `additional_talks` FROM `orders` WHERE `id` = ?");
-	$sth->execute($_);
-	push @order, $sth->fetchrow_array;
-	$saved_orders->{$_} = \@order;
-}
-
-# Calculate fulfillable orders by iterating over the available talks list for each item on the order. If any returns false, stop trying and return an error. If none return false, assume success. 
-
-my %f_orders; # f_orders = fulfillable orders. Just hard to spell consistently!
-
-foreach(keys %$saved_orders)
-{
-	my $order_can_be_fulfilled = 1; # Assume that the order can be fulfilled
-	foreach(@{$saved_orders->{$_}}) # should be an arrayref
-	{
-		# We can't fulfill an order if the talk isn't available
-		$order_can_be_fulfilled = 0 unless $talks->{$_}->{available};
-		# Talks other than those in the current year are undef as they're not in the talks db table.
-		$order_can_be_fulfilled = 1 unless defined $talks->{$_}->{id};
-		last unless $order_can_be_fulfilled; 
-	}
-	if($order_can_be_fulfilled)
-	{
-		%f_orders->{$_}++;
-	}
-	
-}
-
-
-# Get all completed orders
-
-my $completed_orders = { };
-$sth = $dbh->prepare("SELECT `id` FROM `orders` WHERE `complete`=1");
-$sth->execute();
-my @orders;
-while (my @data = $sth->fetchrow_array)
-{
-        push @orders, $data[0];
-}
-
-foreach(@orders)
-{
-        my @order;
-        $sth = $dbh->prepare("SELECT `talk_id` FROM `order_items` WHERE `order_id`= ?");
-        $sth->execute($_);
-        while (my @data = $sth->fetchrow_array)
-        {
-                push @order, $data[0];
-        }
-        $sth = $dbh->prepare("SELECT `additional_talks` FROM `orders` WHERE `id` = ?");
-        $sth->execute($_);
-        push @order, $sth->fetchrow_array;
-        $completed_orders->{$_} = \@order;
-}
-
-
-my $output_html;
-
 my $is_response;
 
 if($post_data->param('order_id')) {
@@ -186,105 +126,31 @@ if($post_data->param('order_id')) {
 }
 
 
-
-my @avail_talks;
-
-foreach(values %$talks)
-{
-	push @avail_talks, $_->{id} if $_->{available};
-}
-
-@avail_talks = sort { $a <=> $b } @avail_talks;
-
-
-# Output details of all unfulfilled orders
-
-foreach(sort keys %$saved_orders)
-{
-	next unless %f_orders->{$_};
-        $output_html .= "<tr><td>$_</td><td>";
-	foreach(@{$saved_orders->{$_}})
-	{
-		$output_html .= "$_ ";
-	}
-	$output_html .= "</td><td>F</td><td><input type='checkbox' name='order_complete' value='$_'></td></tr>";
-}
-
-# Get details of all un-fulfillable orders
-
-foreach(sort keys %$saved_orders)
-{
-        next if %f_orders->{$_};
-        $output_html .= "<tr><td>$_</td><td>";
-        foreach(@{$saved_orders->{$_}})
-        {
-                $output_html .= "$_ ";
-        }
-        $output_html .= "</td><td> </td><td><input type='checkbox' name='order_complete' value='$_'></td></tr>";
-}
-
-$output_html .= <<END;
-</table>
-<input type="submit" value="Mark orders as complete" />
-</form>
-</div>
-
-END
-
-# Output list of orders that have been completed
-$output_html .= <<END;
-<div id="completed_orders" class="blue_box">
-<h3>Completed Orders</h3>
-<table>
-<tr><td>Order ID</td><td>Talks in Order</td></tr>
-END
-
-foreach(sort keys %$completed_orders)
-{
-        $output_html .= "<tr><td>$_</td><td>";
-        foreach(@{$completed_orders->{$_}})
-        {
-                $output_html .= "$_ ";
-        }
-        $output_html .= "</td></tr>";
-}
-
-$output_html .= <<END;
-</table>
-</div>
-
-END
-
-# Output debug messages
-if (@debug_messages) {
-$output_html .= <<END;
-
-<div id ="debug">
-
-<h3>Debug messages</h3>
-END
-
-foreach(@debug_messages)
-{
-
-        $output_html .= "<p>" . $_ . "</p>";
-
-}
-$output_html .= <<END;
-
-</div>
-
-END
-}
 # And the footer, just in case there's anything that needs to go here
-
-$output_html .= <<END;
-
-</div>
-</body>
-</html>
-END
 
 #Output page
 
-print $post_data->header, $output_html;
+print $post_data->header;
+
+my $output_vars = {
+	error_messages => @error_messages,
+	is_response => $is_response,
+	gb_short_year => $gb_short_year,
+	available_talks => $available_talks,
+	fulfillable_orders => $orders->{0}->{1}, # completed -> fulfillable
+	unfulfillable_orders => $orders->{0}->{0}, # ditto
+	completed_orders => $orders->{1}->{1}, # There should be no completed but unfulfillable orders. TODO: some hash merging
+};
+
+
+my $tt = Template->new({
+	INCLUDE_PATH => '/var/www/html/templates'
+});
+
+
+$tt->process('orders.tmpl', $output_vars);
+
+
+
+
+

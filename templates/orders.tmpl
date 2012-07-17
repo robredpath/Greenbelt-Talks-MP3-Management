@@ -25,7 +25,7 @@
 
 </div>
 
-[% ELSE %]
+[% ELSIF is_response %]
 
 <div id="confirmation" class="green_box">
 
@@ -61,34 +61,56 @@
 <h3>Pending Orders</h3>
 <form method="POST">
 <table>
+
 <tr><td>Order ID</td><td>Talks in Order</td><td>F?</td><td>Complete?</td></tr>
 
 [% FOREACH order IN fulfillable_orders %]
 
-<tr><td>[% order.id %]</td>
-
-[% FOREACH talk IN order.talks.nsort %]
-
-[% talk %]
+<tr><td>[% order.id %]</td>[% order.talks %]<td></td><td>F</td><td><input type='checkbox' name='order_complete' value='[% order.id %]'></td></tr>
 
 [% END %]
 
-<td></td><td>F</td><td><input type='checkbox' name='order_complete' value='[% order.id %]'></td></tr>
+[% FOREACH order in unfulfillable_orders %]
+
+<tr><td>[% order.id %]</td>[% order.talks %]<td></td></td><td>&nbsp;</td><td><input type='checkbox' name='order_complete' value='[% order.id %]'></td></tr>
 
 [% END %]
 
-[% FOREACH order in non_fulfillable_orders %]
+</table>
+<input type="submit" value="Mark orders as complete" />
+</form>
+</div>
 
-<tr><td>[% order.id %]</td>
 
-[% FOREACH talk IN order.talks.nsort %]
+<div id="completed_orders" class="blue_box">
+<h3>Completed Orders</h3>
+<table>
+<tr><td>Order ID</td><td>Talks in Order</td></tr>
 
-[% talk %]
+[% FOREACH order IN completed_orders %]
+
+<tr><td>[% order.id %]</td><td>[% order.talks %]</td></tr>
 
 [% END %]
 
 
-<td></td></td><td>&nbsp;</td><td><input type='checkbox' name='order_complete' value='[% order.id %]'></td></tr>
+[% IF debug_messages %]
+<div id ="debug">
+
+<h3>Debug messages</h3>
+
+[% FOREACH message IN debug_messages %]
+
+<p>[% message %]</p>
 
 [% END %]
+
+</div>
+
+[% END %]
+
+</div>
+</body>
+</html>
+
 
