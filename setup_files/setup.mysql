@@ -3,11 +3,12 @@ CREATE DATABASE `gb_talks`;
 USE `gb_talks`;
 
 CREATE TABLE `talks` (
-`id` INT(3) PRIMARY KEY NOT NULL,
+`id` INT(3) NOT NULL,
 `year` INT(2) NOT NULL,
 `speaker` VARCHAR(255) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
 `title` VARCHAR(255) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
-`available` INT(1) DEFAULT 0 NOT NULL )
+`available` INT(1) DEFAULT 0 NOT NULL 
+PRIMARY KEY (id, year) )
 ENGINE = InnoDB;
 
 CREATE TABLE `orders` (
