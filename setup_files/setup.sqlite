@@ -1,3 +1,5 @@
+# SQLite support deprecated 19/07/2012. Schema changes after this date will NOT have been applied to this file
+
 CREATE TABLE `talks` (
 `id` INT(3) PRIMARY KEY NOT NULL,
 `year` INT(2) NOT NULL,
