@@ -8,7 +8,7 @@ CREATE TABLE `talks` (
 `speaker` VARCHAR(255) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
 `title` VARCHAR(255) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
 `available` INT(1) DEFAULT 0 NOT NULL 
-PRIMARY KEY (id, year) )
+CONSTRAINT `pk_talks` PRIMARY KEY `pk_talks`(id, year) )
 ENGINE = InnoDB;
 
 CREATE TABLE `orders` (
@@ -16,15 +16,15 @@ CREATE TABLE `orders` (
 ENGINE = InnoDB;
 
 CREATE TABLE  `order_items` (
- `order_id` INT( 3 ) NOT NULL ,
- `talk_id` INT( 3 ) NOT NULL ,
+ `order_id` INT(3) NOT NULL ,
+ `talk_id` INT(3) NOT NULL ,
 CONSTRAINT  `pk_order_items` 
-	PRIMARY KEY  `pk_order_items` (  `order_id` ,  `talk_id` ) ,
+	PRIMARY KEY  `pk_order_items`(`order_id`,`talk_id`) ,
 CONSTRAINT  `fk_order_items_talks` 
-	FOREIGN KEY  `fk_order_items_talks` (  `talk_id` ) 
-	REFERENCES  `talks` (  `id` ) 
+	FOREIGN KEY  `fk_order_items_talks`(`talk_id`) 
+	REFERENCES  `talks`(`id`) 
 	ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE = INNODB;
+) ENGINE = InnoDB;
 
 CREATE TABLE `upload_queue` (
 `sequence` INT(3) PRIMARY KEY NOT NULL,
