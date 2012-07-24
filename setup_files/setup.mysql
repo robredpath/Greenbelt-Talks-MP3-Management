@@ -18,35 +18,44 @@ PRIMARY KEY (`id`, `year`)
 ENGINE = InnoDB;
 
 CREATE TABLE `order_items` (
- `order_id` INT( 3 ) NOT NULL ,
- `talk_id` INT( 3 ) NOT NULL ,
-CONSTRAINT `pk_order_items`
+ `order_id` INT(3) NOT NULL,
+ `order_year` YEAR(4) NOT NULL,
+ `talk_id` INT(3) NOT NULL,
+ `talk_year` YEAR(4) NOT NULL,
 PRIMARY KEY `pk_order_items` ( `order_id` , `talk_id` ) ,
-CONSTRAINT `fk_order_items_talks`
-FOREIGN KEY `fk_order_items_talks` ( `talk_id` )
-REFERENCES `talks` ( `id` )
-ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE = INNODB;
+CONSTRAINT `fk_order_items_talk` 
+	FOREIGN KEY `fk_order_items_talk` (`talk_id`, `talk_year`) 
+	REFERENCES `talks`(`id`, `year`) 
+	ON DELETE RESTRICT 
+	ON UPDATE CASCADE
+CONSTRAINT `fk_order_items_order` 
+	FOREIGN KEY `fk_order_items_order` (`order_id`, `order_year`) 
+	REFERENCES `orders`(`id`, `year`) 
+	ON DELETE RESTRICT 
+	ON UPDATE CASCADE
+) ENGINE = InnoDB;
 
 CREATE TABLE `upload_queue` (
 `sequence` INT(3) PRIMARY KEY NOT NULL,
 `priority` INT(1) NOT NULL,
 `talk_id` INT(3) UNIQUE NOT NULL,
-CONSTRAINT `fk_upload_queue_talks`
-        FOREIGN KEY `fk_upload_queue_talks`(`talk_id`)
-        REFERENCES `talks`(`id`)
-        ON DELETE NO ACTION
-        ON UPDATE NO ACTION)
+`talk_year` YEAR(4) NOT NULL,
+CONSTRAINT `fk_upload_queue_talk`
+        FOREIGN KEY `fk_upload_queue_talk` (`talk_id`, `talk_year`)
+        REFERENCES `talks`(`id`,`year`)
+        ON DELETE CASCADE
+        ON UPDATE RESTRICT)
 ENGINE = InnoDB;
 
 CREATE TABLE `transcode_queue` (
 `sequence` INT(3) PRIMARY KEY NOT NULL,
 `priority` INT(1) NOT NULL,
 `talk_id` INT(3) UNIQUE NOT NULL,
-CONSTRAINT `fk_transcode_queue_talks`
-        FOREIGN KEY `fk_transcode_queue_talks`(`talk_id`)
-        REFERENCES `talks`(`id`)
-        ON DELETE NO ACTION
-        ON UPDATE NO ACTION)
+`talk_year` YEAR(4) NOT NULL,
+CONSTRAINT `fk_transcode_queue_talk`
+        FOREIGN KEY `fk_transcode_queue_talk` (`talk_id`,`talk_year`)
+        REFERENCES `talks`(`id`,`year`)
+        ON DELETE CASCADE
+        ON UPDATE RESTRICT)
 ENGINE = InnoDB;
 
