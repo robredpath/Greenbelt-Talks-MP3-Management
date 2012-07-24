@@ -1,6 +1,6 @@
-TRUNCATE TABLE `gb_talks`.`order_items`;
-TRUNCATE TABLE `gb_talks`.`orders`;
-TRUNCATE TABLE `gb_talks`.`talks`;
+DELETE FROM `gb_talks`.`order_items`;
+DELETE FROM `gb_talks`.`orders`;
+DELETE FROM `gb_talks`.`talks`;
 
 INSERT INTO `gb_talks`.`talks` 
 (`id`,`year`,`speaker`,`title`,`available`)
@@ -19,7 +19,7 @@ VALUES
 ('2','2012'),
 ('100', '2012'),
 ('78', '2012'),
-('987', '2012');
+('987', '2012'),
 ('10', '2011'),
 ('83', '2011'),
 ('282', '2011');
@@ -29,13 +29,13 @@ INSERT INTO `gb_talks`.`order_items`
 VALUES
 ('2','2012','3','2012'),
 ('2','2012','95','2012'),
-('987','2012', '108','2012'),
+('987','2012', '108','2011'),
 ('100','2012','1','2012'),
 ('100','2012','2','2012'),
 ('100','2012','3','2012'),
 ('100','2012','95','2012'),
-('100','2012','108','2012'),
-('100','2012','25','2012');
+('100','2012','108','2011'),
+('100','2012','25','2011');
 
 -- Commented out due to SQL not liking blank INSERT statements
 
