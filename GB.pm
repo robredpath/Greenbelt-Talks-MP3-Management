@@ -26,7 +26,7 @@ sub new {
 	my $dbh;
 
 	if ( $db_engine eq "mysql" ) {
-		my $db_name = $conf->{'db_name'};
+		my $db_name = $conf->{'mysql_db'};
 		my $db_host = $conf->{'mysql_host'};
 		my $db_port = $conf->{'mysql_port'};
 		my $dsn = "dbi:mysql:$db_name:$db_host:$db_port";
