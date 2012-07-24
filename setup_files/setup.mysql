@@ -7,13 +7,8 @@ CREATE TABLE `talks`(
 `year` INT(2) NOT NULL,
 `speaker` VARCHAR(255) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
 `title` VARCHAR(255) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
-<<<<<<< HEAD
-`available` INT(1) DEFAULT 0 NOT NULL, 
-CONSTRAINT `pk_talks` PRIMARY KEY `pk_talks`(id, year) )
-=======
 `available` INT(1) DEFAULT 0 NOT NULL,
 PRIMARY KEY (`id`, `year`))
->>>>>>> 5ce8c64d24ed01b6599b24bab902fd9815aada52
 ENGINE = InnoDB;
 
 CREATE TABLE `orders` (
