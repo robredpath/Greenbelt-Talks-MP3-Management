@@ -8,14 +8,14 @@ CREATE TABLE `talks`(
 `speaker` VARCHAR(255) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
 `title` VARCHAR(255) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
 `available` INT(1) DEFAULT 0 NOT NULL,
-PRIMARY KEY (`id`, `year`))
-ENGINE = InnoDB;
+PRIMARY KEY (`id`, `year`)
+) ENGINE = InnoDB;
 
 CREATE TABLE `orders` (
 `id` INT(3) NOT NULL,
-`year` YEAR(4) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+`year` YEAR(4) NOT NULL,
 PRIMARY KEY (`id`, `year`)
-ENGINE = InnoDB;
+) ENGINE = InnoDB;
 
 CREATE TABLE `order_items` (
  `order_id` INT(3) NOT NULL,
@@ -27,7 +27,7 @@ CONSTRAINT `fk_order_items_talk`
 	FOREIGN KEY `fk_order_items_talk` (`talk_id`, `talk_year`) 
 	REFERENCES `talks`(`id`, `year`) 
 	ON DELETE RESTRICT 
-	ON UPDATE CASCADE
+	ON UPDATE CASCADE,
 CONSTRAINT `fk_order_items_order` 
 	FOREIGN KEY `fk_order_items_order` (`order_id`, `order_year`) 
 	REFERENCES `orders`(`id`, `year`) 
