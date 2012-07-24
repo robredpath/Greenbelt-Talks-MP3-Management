@@ -7,7 +7,7 @@ CREATE TABLE `talks` (
 `year` INT(2) NOT NULL,
 `speaker` VARCHAR(255) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
 `title` VARCHAR(255) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
-`available` INT(1) DEFAULT 0 NOT NULL 
+`available` INT(1) DEFAULT 0 NOT NULL, 
 CONSTRAINT `pk_talks` PRIMARY KEY `pk_talks`(id, year) )
 ENGINE = InnoDB;
 
