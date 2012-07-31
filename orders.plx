@@ -36,26 +36,39 @@ my $dbh = $gb->{db};
 my $conf = $gb->{conf};
 
 my $gb_short_year = $1 if $conf->{'gb_short_year'} =~ /([0-9]{2})/;
+my $gb_long_year = "20$gb_short_year";
 my $sth;
 my $rv;
 my $sql;
-my @debug_messages;
-my @error_messages;
+my $debug_messages;
+my $error_messages;
 
-my $orders = $dbh->selectall_hashref("SELECT order_id, group_concat(all_talks.id) AS talks, 
-					(group_concat(all_talks.id) <=> group_concat(available_talks.id)) AS fulfillable,
-					completed
-					FROM orders 
+my $orders = $dbh->selectall_hashref("SELECT orders_all_talks.order_id, orders_all_talks.order_year, orders_all_talks.talks, orders_available_talks.talks,
+                                        (orders_all_talks.talks <=> orders_available_talks.talks) AS fulfillable,
+					orders_all_talks.completed
+                                        FROM
+                                        	(SELECT order_items.order_id, order_items.order_year, 
+							group_concat('gb', RIGHT(order_items.talk_year, 2), '-', 
+								IF(LENGTH(order_items.talk_id)=1, LPAD(order_items.talk_id, 2, '00'), order_items.talk_id)) as talks, 
+							completed 
+						FROM orders 
 						INNER JOIN order_items 
-							ON orders.id=order_items.order_id 
-						AS all_talks, 
-					orders 
+							ON (orders.id, orders.year) = (order_items.order_id, order_items.order_year) 
+						GROUP BY order_year, order_id) orders_all_talks,
+                                        (SELECT order_items.order_id, order_items.order_year, 
+							group_concat('gb', RIGHT(order_items.talk_year, 2), '-', 
+								IF(LENGTH(order_items.talk_id)=1, LPAD(order_items.talk_id, 2, '00'), order_items.talk_id)) as talks, 
+							completed 
+						FROM orders 
 						INNER JOIN order_items 
-							ON orders.id=order_items.order_id 
-						INNER JOIN (SELECT id, available FROM talks WHERE available=1) talks_a 
-							ON talks_a.id=order_items.talk_id 
-						AS available_talks", ['completed','fulfillable']);
+							ON (orders.id, orders.year) = (order_items.order_id, order_items.order_year) 
+						INNER JOIN talks ON (order_items.talk_id, order_items.talk_year) = (talks.id, talks.year) 
+						WHERE talks.available=1 GROUP BY order_year, order_id) orders_available_talks
+					WHERE (orders_all_talks.order_id, orders_all_talks.order_year) = (orders_available_talks.order_id, orders_available_talks.order_year)
+					", ['completed','fulfillable','order_id']);
 
+
+warn Dumper($orders);
 
 # Get all talks
 my $talks = $dbh->selectall_hashref('SELECT `id`, `available` FROM `talks`','id');
@@ -64,12 +77,12 @@ my $talks = $dbh->selectall_hashref('SELECT `id`, `available` FROM `talks`','id'
 my $available_talks = $dbh->selectcol_arrayref("SELECT id from talks where available=1");
 
 # Get all existing order IDs so that we can't double-enter.
-$sth = $dbh->prepare("SELECT `id` from `orders`");
+$sth = $dbh->prepare("SELECT `id` from `orders` WHERE year=$gb_long_year");
 $sth->execute();
 my @existing_orders;
 while(my @order = $sth->fetchrow_array)
 {
-	push @existing_orders, @order[0];
+	push @existing_orders, $order[0];
 }
 
 
@@ -119,7 +132,7 @@ if($post_data->param('order_complete'))
 
 # TODO: Add box set support
 
-my $is_response;
+my $is_response = 0;
 
 if($post_data->param('order_id')) {
 	$is_response = 1;
@@ -133,7 +146,7 @@ if($post_data->param('order_id')) {
 print $post_data->header;
 
 my $output_vars = {
-	error_messages => @error_messages,
+	error_messages => $error_messages,
 	is_response => $is_response,
 	gb_short_year => $gb_short_year,
 	available_talks => $available_talks,
@@ -142,6 +155,8 @@ my $output_vars = {
 	completed_orders => $orders->{1}->{1}, # There should be no completed but unfulfillable orders. TODO: some hash merging
 };
 
+
+warn Dumper($output_vars);
 
 my $tt = Template->new({
 	INCLUDE_PATH => '/var/www/html/templates'
