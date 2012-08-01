@@ -8,7 +8,7 @@ use strict;
 use warnings;
 
 #************************************************************************
-# upload_talk.plx
+# upload_talk.cgi
 #
 # A script to handle HQ mp3 uploads of talks 
 #
@@ -35,8 +35,8 @@ my $conf = $gb->{conf};
 
 # Set up the environment
 $CGI::POST_MAX = 1024 * 512000; # 512MB should be enough for what we're doing!
-my $upload_dir = "./upload_queue";
-my $transcode_dir = "./gb_talks_upload";
+my $upload_dir = $1 if $conf->{'upload_dir'} =~ /[0-9a-zA-Z\/\.]/ or die "Invalid upload dir specified";
+my $transcode_dir = $1 if $conf->{'transcode_dir'} =~ /[0-9a-zA-Z\/\.]/ or die "Invalid transcode dir specified";
 my $gb_short_year = $1 if $conf->{'gb_short_year'} =~ /(^[0-9]{2}$)/;
 my $sth;
 my $rv;
@@ -139,7 +139,7 @@ END
 $output_html .= <<END;
 <div id="upload_form">
 <h3>Select a talk to upload below</h3>
-<form action="upload_talk.plx" method="POST" enctype="multipart/form-data">
+<form action="" method="POST" enctype="multipart/form-data">
 mp3:<input type="file" id="talk_data" name="talk_data"/>
 snip:<input type="file" id="snip_data" name="snip_data"/>
 Talk ID: <select name="talk_id" id="talk_id">
