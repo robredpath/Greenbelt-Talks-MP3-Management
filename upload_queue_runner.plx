@@ -27,6 +27,8 @@ my $gb = GB->new("../gb_talks.conf");
 my $dbh = $gb->{db};
 my $conf = $gb->{conf};
 
+my $upload_dir = $1 if $conf->{'upload_dir'} =~ /[0-9a-zA-Z\/\.]/ or die "Invalid upload dir specified";
+
 my $short_year = $1 if $conf->{'gb_short_year'} =~ /([0-9]{2})/;
 my $rsync_host = $1 if $conf->{'rsync_host'} =~ /([a-zA-Z0-9\.]+)/;
 my $rsync_user = $1 if $conf->{'rsync_user'} =~ /([a-zA-Z0-9\.]+)/;
@@ -61,7 +63,7 @@ my $current_uploads = $1 if `ls /var/run/gb_upload* | wc -l` =~ /([0-9]+)/;
 
 if ( $current_uploads <= $max_uploads )
 {
-	# Get the next talk to upload - highest priority first, oldest first
+	# Get the next talk to upload - highest priority first, oldest first. Let's assume that we're only uploading talks for the current year
 	$sth = $dbh->prepare("SELECT talk_id FROM upload_queue ORDER BY priority DESC, sequence ASC LIMIT 1;");
 	$sth->execute;
 	my @queue;
@@ -86,7 +88,7 @@ if ( $current_uploads <= $max_uploads )
 		log_it("Uploading $snip_filename");	
 
 		# Upload the snip file
-		system("rsync --partial upload_queue/$snip_filename $rsync_user\@$rsync_host:$rsync_path/$snip_filename");
+		system("rsync --partial $upload_dir/$snip_filename $rsync_user\@$rsync_host:$rsync_path/$snip_filename");
 
 		my $snip_upload_succeeded = 0;
 		my $snip_md5;
@@ -104,7 +106,7 @@ if ( $current_uploads <= $max_uploads )
 			my $log_message = sprintf "rsync for snippet $snip_filename: child exited with value %d\n", $? >> 8;
                         log_it($log_message);
                         my $ctx = Digest::MD5->new;
-                        open FILE, "<upload_queue/$snip_filename";
+                        open FILE, "<$upload_dir/$snip_filename";
                         binmode(FILE);
                         while(<FILE>) {
                                 $ctx->add($_);
@@ -115,7 +117,7 @@ if ( $current_uploads <= $max_uploads )
 
 		# Upload the actual mp3
 		log_it("Uploading $mp3_filename");
-		system("rsync --partial upload_queue/$mp3_filename $rsync_user\@$rsync_host:$rsync_path/$mp3_filename");
+		system("rsync --partial $upload_dir/$mp3_filename $rsync_user\@$rsync_host:$rsync_path/$mp3_filename");
 
 		my $mp3_upload_succeeded;
 		my $mp3_md5;
@@ -137,7 +139,7 @@ if ( $current_uploads <= $max_uploads )
 		if($snip_upload_succeeded && $mp3_upload_succeeded)
 		{	
 			my $ctx = Digest::MD5->new; 
-			open FILE, "<upload_queue/$mp3_filename";
+			open FILE, "<$upload_dir/$mp3_filename";
 			binmode(FILE);
 			while(<FILE>) {
 				$ctx->add($_);
