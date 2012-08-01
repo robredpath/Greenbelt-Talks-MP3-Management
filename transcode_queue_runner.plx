@@ -23,6 +23,9 @@ my $gb = GB->new("../gb_talks.conf");
 my $dbh = $gb->{db};
 my $conf = $gb->{conf};
 
+my $upload_dir = $1 if $conf->{'upload_dir'} =~ /[0-9a-zA-Z\/\.]/ or die "Invalid upload dir specified";
+my $transcode_dir = $1 if $conf->{'transcode_dir'} =~ /[0-9a-zA-Z\/\.]/ or die "Invalid transcode dir specified";
+
 my $sth;
 my $lame_params = "--abr 96 -q2 --mp3input -S -m j -c";
 my $short_year = $1 if $conf->{'gb_short_year'} =~ /([0-9]{2})/;
@@ -50,14 +53,14 @@ my $max_transcodes = $1 if $conf->{'max_transcodes'} =~ /([0-9]+)/;
 
 my $current_transcodes = $1 if `ls /var/run/gb_transcode* | wc -l` =~ /([0-9]+)/;
 
-if (! -e './transcode_queue')
+if (! -e $transcode_dir)
 {
-	mkdir('./transcode_queue');
+	mkdir($transcode_dir) or die "Could not create transcode dir";
 }
 
 if ( $current_transcodes <= $max_transcodes )
 {
-	# Get the next talk to transcode - highest priority first, oldest first
+	# Get the next talk to transcode - highest priority first, oldest first. We can assume that we're only transcoding talks from this year.
 	$sth = $dbh->prepare("SELECT talk_id FROM transcode_queue ORDER BY priority DESC, sequence DESC LIMIT ?");
 	$sth->execute($current_transcodes);
 	my @queue;
