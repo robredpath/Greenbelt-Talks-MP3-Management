@@ -9,6 +9,7 @@ CREATE TABLE `talks`(
 `title` VARCHAR(255) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
 `available` INT(1) DEFAULT 0 NOT NULL,
 `priority` INT(2) DEFAULT 10 NOT NULL,
+`uplaoded` TINYINT(1) DEFAULT 0 NOT NULL,
 PRIMARY KEY (`id`, `year`)
 ) ENGINE = InnoDB;
 
