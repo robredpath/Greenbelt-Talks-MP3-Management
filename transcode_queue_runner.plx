@@ -29,6 +29,7 @@ my $transcode_dir = $1 if $conf->{'transcode_dir'} =~ /[0-9a-zA-Z\/\.]/ or die "
 my $sth;
 my $lame_params = "--abr 96 -q2 --mp3input -S -m j -c";
 my $short_year = $1 if $conf->{'gb_short_year'} =~ /([0-9]{2})/;
+my $gb_long_year = "20$short_year";
 
 $ENV{PATH} = "/bin:/usr/bin";
 
@@ -101,10 +102,10 @@ if ( $current_transcodes <= $max_transcodes )
 		# Remove the item from the queue
 		$sth = $dbh->prepare('DELETE FROM transcode_queue where talk_id=?');
 		$sth->execute($talk_id);
-		$sth = $dbh->prepare('INSERT INTO upload_queue(sequence, priority, talk_id) VALUES (NULL,?,?)');
-		$sth->execute(2,$talk_id);
-		$sth = $dbh->prepare('UPDATE talks SET available=1 WHERE id=?');
-		$sth->execute($talk_id);
+		$sth = $dbh->prepare('INSERT INTO upload_queue(sequence, priority, talk_id, talk_year) VALUES (NULL,?,?,?)');
+		$sth->execute(2,$talk_id,$gb_long_year);
+		$sth = $dbh->prepare('UPDATE talks SET available=1 WHERE id=? AND year=?');
+		$sth->execute($talk_id, $gb_long_year);
 	} else {
 		log_it("Nothing in queue - terminating");
 	}

@@ -33,6 +33,7 @@ my $short_year = $1 if $conf->{'gb_short_year'} =~ /([0-9]{2})/;
 my $rsync_host = $1 if $conf->{'rsync_host'} =~ /([a-zA-Z0-9\.]+)/;
 my $rsync_user = $1 if $conf->{'rsync_user'} =~ /([a-zA-Z0-9\.]+)/;
 my $rsync_path = $1 if $conf->{'rsync_path'} =~ /([a-zA-Z0-9\.\/~]+)/;
+my $upload_method = $1 if $conf->{'upload_method'} =~ /([a-zA-Z0-9\.]+)/;
 my $sth;
 
 sub log_it {
@@ -79,7 +80,7 @@ if ( $current_uploads <= $max_uploads )
 	log_it("No talk - aborting") unless $talk_id;
 
 	alarm(3600); # Let the script run for an hour. If it takes longer than that, we want to quit, log any results, and let another process start up to resume the transfer. 
-	if($talk_id)
+	if($talk_id && $upload_method eq "rsync")
 	{	
 		my $mp3_filename = "gb$short_year-$talk_id" . "mp3.mp3";
 		my $snip_filename = "gb$short_year-$talk_id" . "snip.mp3";
