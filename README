@@ -41,7 +41,6 @@ TODO:-
  - Suspend talk from sale affects both website and local MP3 orders (or make it toggle-able).
  - Wrong track has been uploaded / track has been uploaded with incorrect ID
 - Add proper box set support
-- Add conf options for directories 
 - Add confirmation stage to upload to avoid mistakes
 - Add sanity checking to upload page - has a talk finished yet?
 - Add 'replace' checkbox to upload page

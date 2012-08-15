@@ -43,38 +43,8 @@ my $sql;
 my $debug_messages;
 my $error_messages;
 
-my $orders = $dbh->selectall_hashref("SELECT orders_all_talks.order_id, orders_all_talks.order_year, orders_all_talks.talks, orders_available_talks.talks,
-                                        (orders_all_talks.talks <=> orders_available_talks.talks) AS fulfillable,
-					orders_all_talks.completed
-                                        FROM
-                                        	(SELECT order_items.order_id, order_items.order_year, 
-							group_concat('gb', RIGHT(order_items.talk_year, 2), '-', 
-								IF(LENGTH(order_items.talk_id)=1, LPAD(order_items.talk_id, 2, '00'), order_items.talk_id)) as talks, 
-							completed 
-						FROM orders 
-						INNER JOIN order_items 
-							ON (orders.id, orders.year) = (order_items.order_id, order_items.order_year) 
-						GROUP BY order_year, order_id) orders_all_talks,
-                                        (SELECT order_items.order_id, order_items.order_year, 
-							group_concat('gb', RIGHT(order_items.talk_year, 2), '-', 
-								IF(LENGTH(order_items.talk_id)=1, LPAD(order_items.talk_id, 2, '00'), order_items.talk_id)) as talks, 
-							completed 
-						FROM orders 
-						INNER JOIN order_items 
-							ON (orders.id, orders.year) = (order_items.order_id, order_items.order_year) 
-						INNER JOIN talks ON (order_items.talk_id, order_items.talk_year) = (talks.id, talks.year) 
-						WHERE talks.available=1 GROUP BY order_year, order_id) orders_available_talks
-					WHERE (orders_all_talks.order_id, orders_all_talks.order_year) = (orders_available_talks.order_id, orders_available_talks.order_year)
-					", ['completed','fulfillable','order_id']);
-
-
-warn Dumper($orders);
-
-# Get all talks
-my $talks = $dbh->selectall_hashref('SELECT `id`, `available` FROM `talks`','id');
-
 # Get available talks
-my $available_talks = $dbh->selectcol_arrayref("SELECT id from talks where available=1");
+my $available_talks = $dbh->selectcol_arrayref("SELECT `id` FROM talks WHERE available=1 AND year=$gb_long_year");
 
 # Get all existing order IDs so that we can't double-enter.
 $sth = $dbh->prepare("SELECT `id` from `orders` WHERE year=$gb_long_year");
@@ -107,14 +77,14 @@ if($post_data->param('order_id'))
 	# Create a new order if there isn't one already
 	unless(grep /^$new_order->{id}$/, @existing_orders ) {
 		# add order ID into orders table
-		$sth = $dbh->prepare("INSERT INTO `orders`(`id`, `additional_talks`) VALUES (?,?)");
-		$sth->execute($new_order->{id}, @additional_talks ? @additional_talks : undef );
+		$sth = $dbh->prepare("INSERT INTO `orders`(`id`, `year`, `additional_talks`) VALUES (?,?,?)");
+		$sth->execute($new_order->{id}, $gb_long_year, @additional_talks ? @additional_talks : undef );
 	}
 	# add items into order_items table
 	foreach my $talk (@this_years_talks)
 	{
-		$sth = $dbh->prepare("INSERT INTO `order_items`(`order_id`,`talk_id`) VALUES (?,?)"); 
-		$rv = $sth->execute($new_order->{'id'}, $talk);
+		$sth = $dbh->prepare("INSERT INTO `order_items`(`order_id`, `order_year`, `talk_id`, `talk_year`) VALUES (?,?,?,?)"); 
+		$rv = $sth->execute($new_order->{'id'}, $gb_long_year, $talk, $gb_long_year);
 	}
 }
 
@@ -125,8 +95,8 @@ if($post_data->param('order_complete'))
 	my @completed_orders = $post_data->param('order_complete');
 	foreach(@completed_orders)
 	{
-		$sth = $dbh->prepare("UPDATE `orders` SET `complete`=1 WHERE id=?");
-		$rv = $sth->execute($_);
+		$sth = $dbh->prepare("UPDATE `orders` SET `completed`=1 WHERE id=? AND year=?");
+		$rv = $sth->execute($_, $gb_long_year);
 	}	
 }
 
@@ -138,8 +108,36 @@ if($post_data->param('order_id')) {
 	$is_response = 1;
 }
 
+my $orders = $dbh->selectall_hashref("SELECT orders_all_talks.order_id, orders_all_talks.order_year, 
+					orders_all_talks.talks AS all_talks, 
+					orders_available_talks.talks AS available_talks,
+                                        (orders_all_talks.talks <=> orders_available_talks.talks) AS fulfillable,
+                                        orders_all_talks.completed
+                                        FROM
+                                                (SELECT order_items.order_id, order_items.order_year, 
+                                                        group_concat('gb', RIGHT(order_items.talk_year, 2), '-', 
+                                                                IF(LENGTH(order_items.talk_id)=1, LPAD(order_items.talk_id, 2, '00'), order_items.talk_id)) as talks, 
+                                                        completed 
+                                                FROM orders 
+                                                INNER JOIN order_items 
+                                                        ON (orders.id, orders.year) = (order_items.order_id, order_items.order_year) 
+                                                GROUP BY order_year, order_id
+						ORDER BY order_id ASC) orders_all_talks,
+                                        (SELECT order_items.order_id, order_items.order_year, 
+                                                        group_concat('gb', RIGHT(order_items.talk_year, 2), '-', 
+                                                                IF(LENGTH(order_items.talk_id)=1, LPAD(order_items.talk_id, 2, '00'), order_items.talk_id)) as talks, 
+                                                        completed 
+                                                FROM orders 
+                                                INNER JOIN order_items 
+                                                        ON (orders.id, orders.year) = (order_items.order_id, order_items.order_year) 
+                                                INNER JOIN talks ON (order_items.talk_id, order_items.talk_year) = (talks.id, talks.year) 
+                                                WHERE talks.available=1 
+						GROUP BY order_year, order_id
+						ORDER BY order_id ASC) orders_available_talks
+                                        WHERE (orders_all_talks.order_id, orders_all_talks.order_year) = (orders_available_talks.order_id, orders_available_talks.order_year)
+                                        ", ['completed','fulfillable','order_id']);
 
-# And the footer, just in case there's anything that needs to go here
+warn Dumper($orders);
 
 #Output page
 
@@ -152,7 +150,8 @@ my $output_vars = {
 	available_talks => $available_talks,
 	fulfillable_orders => $orders->{0}->{1}, # completed -> fulfillable
 	unfulfillable_orders => $orders->{0}->{0}, # ditto
-	completed_orders => $orders->{1}->{1}, # There should be no completed but unfulfillable orders. TODO: some hash merging
+	completed_orders => $orders->{1}->{1}, # TODO: some hash merging
+	completed_uf_orders => $orders->{1}->{0},
 };
 
 

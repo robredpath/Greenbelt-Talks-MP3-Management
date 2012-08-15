@@ -16,7 +16,8 @@ PRIMARY KEY (`id`, `year`)
 CREATE TABLE `orders` (
 `id` INT(3) NOT NULL,
 `year` YEAR(4) NOT NULL,
-`completed` TINYINT(1) NOT NULL DEFAULT 0,
+`complete` TINYINT(1) NOT NULL DEFAULT 0,
+`additional_talks` TEXT DEFAULT NULL,
 PRIMARY KEY (`id`, `year`)
 ) ENGINE = InnoDB;
 

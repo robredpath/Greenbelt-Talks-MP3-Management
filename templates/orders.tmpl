@@ -62,17 +62,17 @@
 <form method="POST">
 <table>
 
-<tr><td>Order ID</td><td>Talks in Order</td><td>F?</td><td>Complete?</td></tr>
+<tr><td>Order ID</td><td>Talks in Order</td><td>F?</td><td>Mark Complete?</td></tr>
 
 [% FOREACH order_id IN fulfillable_orders.keys %]
 
-<tr><td>[% fulfillable_orders.${order_id}.order_id %]</td><td>[% fulfillable_orders.${order_id}.talks %]<td></td><td>F</td><td><input type='checkbox' name='order_complete' value='[% fulfillable_orders.${order_id}.order_id %]'></td></tr>
+<tr><td>[% fulfillable_orders.${order_id}.order_id %]</td><td>[% fulfillable_orders.${order_id}.all_talks %]<td>F</td><td><input type='checkbox' name='order_complete' value='[% fulfillable_orders.${order_id}.order_id %]'></td></tr>
 
 [% END %]
 
 [% FOREACH order_id IN unfulfillable_orders.keys %]
 
-<tr><td>[% unfulfillable_orders.${order_id}.order_id %]</td><td>[% unfulfillable_orders.${order_id}.talks %]<td></td><td>&nbsp;</td><td><input type='checkbox' name='order_complete' value='[% unfulfillable_orders.${order_id}.order_id %]'></td></tr>
+<tr><td>[% unfulfillable_orders.${order_id}.order_id %]</td><td>[% unfulfillable_orders.${order_id}.all_talks %]<td>&nbsp;</td><td><input type='checkbox' name='order_complete' value='[% unfulfillable_orders.${order_id}.order_id %]'></td></tr>
 
 [% END %]
 
@@ -88,12 +88,19 @@
 <table>
 <tr><td>Order ID</td><td>Talks in Order</td></tr>
 
-[% FOREACH order IN completed_orders %]
+[% FOREACH order_id IN completed_orders.keys %]
 
-<tr><td>[% order.id %]</td><td>[% order.talks %]</td></tr>
+<tr><td>[% completed_orders.${order_id}.order_id %]</td><td>[% completed_orders.${order_id}.all_talks %]</td></tr>
 
 [% END %]
 
+[% FOREACH order_id IN completed_uf_orders.keys %]
+
+<tr><td>[% completed_uf_orders.${order_id}.order_id %]</td><td>[% completed_uf_orders.${order_id}.all_talks %]</td></tr>
+
+[% END %]
+
+</table>
 
 [% IF debug_messages %]
 <div id ="debug">
