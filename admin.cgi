@@ -37,6 +37,9 @@ my $dbh = $gb->{db};
 
 
 my $conf = $gb->{conf};
+my $gb_short_year = $conf->{'gb_short_year'};
+my $gb_long_year = "20$gb_short_year";
+
 my $sth;
 
 my @error_messages;
@@ -88,12 +91,12 @@ if($post_data->{'param'}->{'form_name'})
 			my $talk_id = $_->{'talk_id'};
 			my $new_priority = $1 if @{$post_data->{'param'}->{$_->{'talk_id'}}}[0] =~ /([0-9]?)/;
 			push @debug_messages, $talk_id;
-			$sth = $dbh->prepare("UPDATE transcode_queue SET priority = ? WHERE talk_id = ?");
-			$sth->execute ($new_priority, $talk_id);
+			$sth = $dbh->prepare("UPDATE transcode_queue SET priority = ? WHERE talk_id = ? AND talk_year = ?");
+			$sth->execute ($new_priority, $talk_id, $gb_long_year);
 		}
 		# Reload the transcode queue
 		undef @transcode_queue;
-		$sth = $dbh->prepare("SELECT talk_id, priority, sequence FROM transcode_queue ORDER BY priority DESC, sequence ASC");
+		$sth = $dbh->prepare("SELECT talk_id, talk_year, priority, sequence FROM transcode_queue ORDER BY priority DESC, sequence ASC");
 		$sth->execute;
 		while(my $row = $sth->fetchrow_hashref)
 		{
