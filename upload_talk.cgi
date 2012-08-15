@@ -38,6 +38,7 @@ $CGI::POST_MAX = 1024 * 512000; # 512MB should be enough for what we're doing!
 my $upload_dir = $1 if $conf->{'upload_dir'} =~ /[0-9a-zA-Z\/\.]/ or die "Invalid upload dir specified";
 my $transcode_dir = $1 if $conf->{'transcode_dir'} =~ /[0-9a-zA-Z\/\.]/ or die "Invalid transcode dir specified";
 my $gb_short_year = $1 if $conf->{'gb_short_year'} =~ /(^[0-9]{2}$)/;
+my $gb_long_year = "20$gb_short_year";
 my $sth;
 my $rv;
 
@@ -95,11 +96,11 @@ if ($post_data->param('talk_id') && $post_data->upload('talk_data') && $post_dat
 
 	# Add to transcode queue
 	warn($talk_id);
-	$sth = $dbh->prepare("INSERT INTO transcode_queue(`sequence`,`priority`,`talk_id`) VALUES (NULL,2,?)");
-	$rv = $sth->execute($talk_id);
+	$sth = $dbh->prepare("INSERT INTO transcode_queue(`sequence`,`priority`,`talk_id`, `talk_year`) VALUES (NULL,2,?,?)");
+	$rv = $sth->execute($talk_id, $gb_long_year);
 	# Mark as uploaded
-	$sth = $dbh->prepare("UPDATE `talks` SET `uploaded`=1 where `id`=?");
-	$rv = $sth->execute($talk_id);
+	$sth = $dbh->prepare("UPDATE `talks` SET `uploaded`=1 where `id`=? AND `year`=?");
+	$rv = $sth->execute($talk_id, $gb_long_year);
 
 	# email contact to confirm availability (get contact from conf file)
 	$status_message = "Talk uploaded";
@@ -158,6 +159,7 @@ $output_html .= <<END;
 </select>
 <input type="submit" value="Upload Talk" name="submit"/>
 </form>
+<p>Note that this will only let you upload talks from $gb_long_year - if you're working on anything else, ask Rob for advice</p>
 </div>
 
 END
