@@ -30,10 +30,12 @@ my $conf = $gb->{conf};
 my $upload_dir = $1 if $conf->{'upload_dir'} =~ /[0-9a-zA-Z\/\.]/ or die "Invalid upload dir specified";
 
 my $short_year = $1 if $conf->{'gb_short_year'} =~ /([0-9]{2})/;
-my $rsync_host = $1 if $conf->{'rsync_host'} =~ /([a-zA-Z0-9\.]+)/;
-my $rsync_user = $1 if $conf->{'rsync_user'} =~ /([a-zA-Z0-9\.]+)/;
-my $rsync_path = $1 if $conf->{'rsync_path'} =~ /([a-zA-Z0-9\.\/~]+)/;
+my $upload_host = $1 if $conf->{'upload_host'} =~ /([a-zA-Z0-9\.]+)/;
+my $upload_user = $1 if $conf->{'upload_user'} =~ /([a-zA-Z0-9\.]+)/;
+my $upload_pass = $1 if $conf->{'upload_pass'} =~ /([a-zA-Z0-9\.]+)/;
+my $upload_path = $1 if $conf->{'upload_path'} =~ /([a-zA-Z0-9\.\/~]+)/;
 my $upload_method = $1 if $conf->{'upload_method'} =~ /([a-zA-Z0-9\.]+)/;
+
 my $sth;
 
 sub log_it {
@@ -89,7 +91,7 @@ if ( $current_uploads <= $max_uploads )
 		log_it("Uploading $snip_filename");	
 
 		# Upload the snip file
-		system("rsync --partial $upload_dir/$snip_filename $rsync_user\@$rsync_host:$rsync_path/$snip_filename");
+		system("rsync --partial $upload_dir/$snip_filename $upload_user\@$upload_host:$upload_path/$snip_filename");
 
 		my $snip_upload_succeeded = 0;
 		my $snip_md5;
@@ -118,7 +120,7 @@ if ( $current_uploads <= $max_uploads )
 
 		# Upload the actual mp3
 		log_it("Uploading $mp3_filename");
-		system("rsync --partial $upload_dir/$mp3_filename $rsync_user\@$rsync_host:$rsync_path/$mp3_filename");
+		system("rsync --partial $upload_dir/$mp3_filename $upload_user\@$upload_host:$upload_path/$mp3_filename");
 
 		my $mp3_upload_succeeded;
 		my $mp3_md5;
@@ -136,38 +138,60 @@ if ( $current_uploads <= $max_uploads )
 			log_it($log_message);
 			$mp3_upload_succeeded = 1;
 		}
+	} else if ($talk_id and $upload_method eq "object_storage") {
 		
-		if($snip_upload_succeeded && $mp3_upload_succeeded)
-		{	
-			my $ctx = Digest::MD5->new; 
-			open FILE, "<$upload_dir/$mp3_filename";
-			binmode(FILE);
-			while(<FILE>) {
-				$ctx->add($_);
-			}
-			my $file_md5 = $ctx->hexdigest;
-			
-			$ctx->add("action=make-available&checksum=$file_md5&snippet_checksum=$snip_md5");
-			$ctx->add($conf->{'api_secret'});
+		my $mp3_filename = "gb$short_year-$talk_id" . "mp3.mp3";
+                my $snip_filename = "gb$short_year-$talk_id" . "snip.mp3";
+                $0 = "upload_queue_runner.plx - $mp3_filename";
 
-			# Try to send the talk live. Log any errors. 
+                log_it("Uploading $snip_filename");
 
-			my $api_url = $conf->{'api_url'} . "GB$short_year-$talk_id";
-			my $browser = LWP::UserAgent->new;
-			my $response = $browser->post("$api_url", [action => 'make-available', checksum => $file_md5, snippet_checksum => $snip_md5, sig => $ctx->hexdigest ]);		
-			if ($response->{_rc} == 200) { # If the API call returns 200 (OK) 
-				# Remove the item from the queue
-				$sth = $dbh->prepare('DELETE FROM upload_queue where talk_id=?');
-				$sth->execute($talk_id);
-				log_it("Upload of talk $talk_id successful");
-			}
-			else {
-				my $response_dump = Dumper($response);
-				log_it("API call for $mp3_filename failed. Here's the response: \n\n$response_dump");
-			}		
+		my $ua = LWP::UserAgent->new;
+		$ua->agent("GB Talks Team - test server");
+
+		my $req = HTTP::Request->new(GET => 'https://auth.storage.memset.com/v1.0');
+		$req->header('X-Auth-Key' => $upload_pass);
+		$req->header('X-Auth-User' => $upload_user);
+
+		my $res = $ua->request($req);
+
+		my $auth_key = $res->header('X-Auth-Token');
+		my $storage_url = $res->header('X-Storage-Url');
+
+		$req = HTTP::Request->new(PUT => "$storage_url/$upload_path/$mp3_filename");
+
+	}	
+	
+	if($snip_upload_succeeded && $mp3_upload_succeeded)
+	{	
+		my $ctx = Digest::MD5->new; 
+		open FILE, "<$upload_dir/$mp3_filename";
+		binmode(FILE);
+		while(<FILE>) {
+			$ctx->add($_);
 		}
-		alarm(0);
+		my $file_md5 = $ctx->hexdigest;
+			
+		$ctx->add("action=make-available&checksum=$file_md5&snippet_checksum=$snip_md5");
+		$ctx->add($conf->{'api_secret'});
+
+		# Try to send the talk live. Log any errors. 
+
+		my $api_url = $conf->{'api_url'} . "GB$short_year-$talk_id";
+		my $browser = LWP::UserAgent->new;
+		my $response = $browser->post("$api_url", [action => 'make-available', checksum => $file_md5, snippet_checksum => $snip_md5, sig => $ctx->hexdigest ]);		
+		if ($response->{_rc} == 200) { # If the API call returns 200 (OK) 
+			# Remove the item from the queue
+			$sth = $dbh->prepare('DELETE FROM upload_queue where talk_id=?');
+			$sth->execute($talk_id);
+			log_it("Upload of talk $talk_id successful");
+		}
+		else {
+			my $response_dump = Dumper($response);
+			log_it("API call for $mp3_filename failed. Here's the response: \n\n$response_dump");
+		}		
 	}
+	alarm(0);
 }
 else
 {
