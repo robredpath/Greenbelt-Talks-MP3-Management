@@ -208,7 +208,8 @@ if ( $current_uploads <= $max_uploads )
 			my $response_dump = Dumper($response);
 			log_it("API call for $mp3_filename failed. Here's the response: \n\n$response_dump");
 		}		
-	}
+	} else {
+			log_it("Aborting due to upload failures");
 	alarm(0);
 }
 else
