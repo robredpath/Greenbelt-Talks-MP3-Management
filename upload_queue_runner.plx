@@ -78,8 +78,8 @@ if ( $current_uploads <= $max_uploads )
         my $talk_pos = $current_uploads-1;
         my $talk_id = $queue[$talk_pos];
 	
-	$pad_len=3;
-	$padded_talk_id = sprintf("%0${pad_len}d", $talk_id);
+	my $pad_len=3;
+	my $padded_talk_id = sprintf("%0${pad_len}d", $talk_id);
 	
 	log_it("No talk - aborting") unless $talk_id;
 
@@ -162,7 +162,21 @@ if ( $current_uploads <= $max_uploads )
 		my $auth_key = $res->header('X-Auth-Token');
 		my $storage_url = $res->header('X-Storage-Url');
 
+		$req = HTTP::Request->new(PUT => "$storage_url/$upload_path/$snip_filename");
+		
+		$res = $ua->request($req);
+	
+		if (int($res->code()/100) == 2) {
+			$snip_upload_succeeded = 1;
+		}
+
 		$req = HTTP::Request->new(PUT => "$storage_url/$upload_path/$mp3_filename");
+
+                $res = $ua->request($req);
+
+                if (int($res->code()/100) == 2) {
+                        $mp3_upload_succeeded = 1;
+                }
 
 	}	
 	
@@ -181,7 +195,7 @@ if ( $current_uploads <= $max_uploads )
 
 		# Try to send the talk live. Log any errors. 
 
-		my $api_url = $conf->{'api_url'} . "GB$short_year-$talk_id";
+		my $api_url = $conf->{'api_url'} . "GB$short_year-$padded_talk_id";
 		my $browser = LWP::UserAgent->new;
 		my $response = $browser->post("$api_url", [action => 'make-available', checksum => $file_md5, snippet_checksum => $snip_md5, sig => $ctx->hexdigest ]);		
 		if ($response->{_rc} == 200) { # If the API call returns 200 (OK) 
