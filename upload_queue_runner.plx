@@ -82,19 +82,25 @@ if ( $current_uploads <= $max_uploads )
 	log_it("No talk - aborting") unless $talk_id;
 
 	alarm(3600); # Let the script run for an hour. If it takes longer than that, we want to quit, log any results, and let another process start up to resume the transfer. 
+
+	my $mp3_filename;
+	my $snip_filename;	
+	my $snip_upload_succeeded = 0;
+        my $snip_md5;
+        my $mp3_upload_succeeded;
+        my $mp3_md5;
+
+	
 	if($talk_id && $upload_method eq "rsync")
 	{	
-		my $mp3_filename = "gb$short_year-$talk_id" . "mp3.mp3";
-		my $snip_filename = "gb$short_year-$talk_id" . "snip.mp3";
+		$mp3_filename = "gb$short_year-$talk_id" . "mp3.mp3";
+		$snip_filename = "gb$short_year-$talk_id" . "snip.mp3";
 		$0 = "upload_queue_runner.plx - $mp3_filename";	
 		
 		log_it("Uploading $snip_filename");	
 
 		# Upload the snip file
 		system("rsync --partial $upload_dir/$snip_filename $upload_user\@$upload_host:$upload_path/$snip_filename");
-
-		my $snip_upload_succeeded = 0;
-		my $snip_md5;
 
 		# Check what return code rsync gave to determine how it did at the upload
 
@@ -122,10 +128,6 @@ if ( $current_uploads <= $max_uploads )
 		log_it("Uploading $mp3_filename");
 		system("rsync --partial $upload_dir/$mp3_filename $upload_user\@$upload_host:$upload_path/$mp3_filename");
 
-		my $mp3_upload_succeeded;
-		my $mp3_md5;
-
-
 		# Check what return code rsync gave to determine how it did at the upload
 		if ($? == -1) {
 			log_it("Failed to run rsync for file $mp3_filename: $!");
@@ -138,10 +140,10 @@ if ( $current_uploads <= $max_uploads )
 			log_it($log_message);
 			$mp3_upload_succeeded = 1;
 		}
-	} else if ($talk_id and $upload_method eq "object_storage") {
+	} elsif ($talk_id and $upload_method eq "object_storage") {
 		
-		my $mp3_filename = "gb$short_year-$talk_id" . "mp3.mp3";
-                my $snip_filename = "gb$short_year-$talk_id" . "snip.mp3";
+		$mp3_filename = "gb$short_year-$talk_id" . "mp3.mp3";
+                $snip_filename = "gb$short_year-$talk_id" . "snip.mp3";
                 $0 = "upload_queue_runner.plx - $mp3_filename";
 
                 log_it("Uploading $snip_filename");
