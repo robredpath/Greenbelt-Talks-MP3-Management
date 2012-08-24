@@ -77,7 +77,9 @@ if ( $current_uploads <= $max_uploads )
 	
         my $talk_pos = $current_uploads-1;
         my $talk_id = $queue[$talk_pos];
-
+	
+	$pad_len=3;
+	$padded_talk_id = sprintf("%0${pad_len}d", $talk_id);
 	
 	log_it("No talk - aborting") unless $talk_id;
 
@@ -93,8 +95,8 @@ if ( $current_uploads <= $max_uploads )
 	
 	if($talk_id && $upload_method eq "rsync")
 	{	
-		$mp3_filename = "gb$short_year-$talk_id" . "mp3.mp3";
-		$snip_filename = "gb$short_year-$talk_id" . "snip.mp3";
+		$mp3_filename = "gb$short_year-$padded_talk_id" . "mp3.mp3";
+		$snip_filename = "gb$short_year-$padded_talk_id" . "snip.mp3";
 		$0 = "upload_queue_runner.plx - $mp3_filename";	
 		
 		log_it("Uploading $snip_filename");	
@@ -142,8 +144,8 @@ if ( $current_uploads <= $max_uploads )
 		}
 	} elsif ($talk_id and $upload_method eq "object_storage") {
 		
-		$mp3_filename = "gb$short_year-$talk_id" . "mp3.mp3";
-                $snip_filename = "gb$short_year-$talk_id" . "snip.mp3";
+		$mp3_filename = "gb$short_year-$padded_talk_id" . "mp3.mp3";
+                $snip_filename = "gb$short_year-$padded_talk_id" . "snip.mp3";
                 $0 = "upload_queue_runner.plx - $mp3_filename";
 
                 log_it("Uploading $snip_filename");
