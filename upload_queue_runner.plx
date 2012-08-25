@@ -1,4 +1,4 @@
-#!/usr/bin/perl -T
+#!/usr/bin/perl
 
 BEGIN {
         push @INC, '.';
@@ -27,14 +27,14 @@ my $gb = GB->new("../gb_talks.conf");
 my $dbh = $gb->{db};
 my $conf = $gb->{conf};
 
-my $upload_dir = $1 if $conf->{'upload_dir'} =~ /[0-9a-zA-Z\/\.]/ or die "Invalid upload dir specified";
+my $upload_dir = $conf->{'upload_dir'};
 
-my $short_year = $1 if $conf->{'gb_short_year'} =~ /([0-9]{2})/;
-my $upload_host = $1 if $conf->{'upload_host'} =~ /([a-zA-Z0-9\.]+)/;
-my $upload_user = $1 if $conf->{'upload_user'} =~ /([a-zA-Z0-9\.]+)/;
-my $upload_pass = $1 if $conf->{'upload_pass'} =~ /([a-zA-Z0-9\.]+)/;
-my $upload_path = $1 if $conf->{'upload_path'} =~ /([a-zA-Z0-9\.\/~]+)/;
-my $upload_method = $1 if $conf->{'upload_method'} =~ /([a-zA-Z0-9\.]+)/;
+my $short_year = $conf->{'gb_short_year'};
+my $upload_host = $conf->{'upload_host'};
+my $upload_user = $conf->{'upload_user'};
+my $upload_pass = $conf->{'upload_pass'};
+my $upload_path = $conf->{'upload_path'};
+my $upload_method = $conf->{'upload_method'};
 
 my $sth;
 
@@ -116,13 +116,6 @@ if ( $current_uploads <= $max_uploads )
 			$snip_upload_succeeded = 1;
 			my $log_message = sprintf "rsync for snippet $snip_filename: child exited with value %d\n", $? >> 8;
                         log_it($log_message);
-                        my $ctx = Digest::MD5->new;
-                        open FILE, "<$upload_dir/$snip_filename";
-                        binmode(FILE);
-                        while(<FILE>) {
-                                $ctx->add($_);
-                        }
-                        $snip_md5 = $ctx->hexdigest;
 		}
 
 
@@ -162,15 +155,35 @@ if ( $current_uploads <= $max_uploads )
 		my $auth_key = $res->header('X-Auth-Token');
 		my $storage_url = $res->header('X-Storage-Url');
 
+		my $snip_location = "$upload_dir/$snip_filename";	
 		$req = HTTP::Request->new(PUT => "$storage_url/$upload_path/$snip_filename");
+
+		$req->header('X-Auth-Token' => $auth_key);
+		
+		my $snip_data;
+		open(SNIP, "<$snip_location");
+		foreach(<SNIP>) {
+			$snip_data .= $_;
+		}
+		$req->content($snip_data);
+		close(SNIP);
 		
 		$res = $ua->request($req);
-	
+		my $snip_response = $res->code();
+		
 		if (int($res->code()/100) == 2) {
 			$snip_upload_succeeded = 1;
 		}
-
+		
 		$req = HTTP::Request->new(PUT => "$storage_url/$upload_path/$mp3_filename");
+
+		my $mp3_data;
+                open(MP3, "<$mp3_location");
+                foreach(<MP3>) {
+                        $mp3_data .= $_;
+                }
+                $req->content($mp3_data);
+                close(MP3);		
 
                 $res = $ua->request($req);
 
@@ -190,6 +203,13 @@ if ( $current_uploads <= $max_uploads )
 		}
 		my $file_md5 = $ctx->hexdigest;
 			
+                open FILE, "<$upload_dir/$snip_filename";
+                binmode(FILE);
+                while(<FILE>) {
+                        $ctx->add($_);
+                }
+                my $snip_md5 = $ctx->hexdigest;
+
 		$ctx->add("action=make-available&checksum=$file_md5&snippet_checksum=$snip_md5");
 		$ctx->add($conf->{'api_secret'});
 
@@ -210,6 +230,7 @@ if ( $current_uploads <= $max_uploads )
 		}		
 	} else {
 			log_it("Aborting due to upload failures");
+	}
 	alarm(0);
 }
 else
