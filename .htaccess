@@ -1,2 +1,2 @@
 Options ExecCGI
-AddHandler cgi-script .plx
+AddHandler cgi-script .cgi
