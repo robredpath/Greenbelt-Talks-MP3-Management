@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 BEGIN {
-        push @INC, '.';
+        push @INC, '.', '/var/www/html';
 }
 
 use strict;
@@ -168,15 +168,19 @@ if ( $current_uploads <= $max_uploads )
 		$req->content($snip_data);
 		close(SNIP);
 		
+		log_it("Starting snip upload for talk_id $talk_id");	
 		$res = $ua->request($req);
 		my $snip_response = $res->code();
 		
-		if (int($res->code()/100) == 2) {
+		log_it("Snip upload returned $snip_response");
+			
+		if (int($snip_response/100) == 2) {
 			$snip_upload_succeeded = 1;
 		}
 		
 		$req = HTTP::Request->new(PUT => "$storage_url/$upload_path/$mp3_filename");
-
+		$req->header('X-Auth-Token' => $auth_key);
+		my $mp3_location = "$upload_dir/$mp3_filename";
 		my $mp3_data;
                 open(MP3, "<$mp3_location");
                 foreach(<MP3>) {
@@ -184,10 +188,14 @@ if ( $current_uploads <= $max_uploads )
                 }
                 $req->content($mp3_data);
                 close(MP3);		
-
+		
+		log_it("Starting MP3 upload for talk_id $talk_id");
                 $res = $ua->request($req);
 
-                if (int($res->code()/100) == 2) {
+		my $mp3_response = $res->code();
+		log_it("MP3 upload returned $mp3_response");
+
+                if (int($mp3_response/100) == 2) {
                         $mp3_upload_succeeded = 1;
                 }
 
