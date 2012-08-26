@@ -41,8 +41,9 @@ TODO:-
  - Suspend talk from sale affects both website and local MP3 orders (or make it toggle-able).
  - Wrong track has been uploaded / track has been uploaded with incorrect ID
 - Add proper box set support
-- Add confirmation stage to upload to avoid mistakes
-- Add sanity checking to upload page - has a talk finished yet?
+- Add time support
+	- Don't allow talks to be uploaded that haven't finished yet
+	- Warn if a talk has been pending for more than 4 hours after it's finished
 - Add 'replace' checkbox to upload page
 - Add authentication
 - Add more state support to admin functions

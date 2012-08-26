@@ -64,15 +64,15 @@
 
 <tr><td>Order ID</td><td>Talks in Order</td><td>F?</td><td>Mark Complete?</td></tr>
 
-[% FOREACH order_id IN fulfillable_orders.keys %]
+[% FOREACH order_id IN fulfillable_orders.keys.sort %]
 
-<tr><td>[% fulfillable_orders.${order_id}.order_id %]</td><td>[% fulfillable_orders.${order_id}.all_talks %]<td>F</td><td><input type='checkbox' name='order_complete' value='[% fulfillable_orders.${order_id}.order_id %]'></td></tr>
+<tr><td>[% fulfillable_orders.${order_id}.order_id %]</td><td>[% fulfillable_orders.${order_id}.all_talks %]</td><td>F</td><td><input type='checkbox' name='order_complete' value='[% fulfillable_orders.${order_id}.order_id %]'></td></tr>
 
 [% END %]
 
-[% FOREACH order_id IN unfulfillable_orders.keys %]
+[% FOREACH order_id IN unfulfillable_orders.keys.sort %]
 
-<tr><td>[% unfulfillable_orders.${order_id}.order_id %]</td><td>[% unfulfillable_orders.${order_id}.all_talks %]<td>&nbsp;</td><td><input type='checkbox' name='order_complete' value='[% unfulfillable_orders.${order_id}.order_id %]'></td></tr>
+<tr><td>[% unfulfillable_orders.${order_id}.order_id %]</td><td>[% unfulfillable_orders.${order_id}.all_talks %]</td><td>&nbsp;</td><td><input type='checkbox' name='order_complete' value='[% unfulfillable_orders.${order_id}.order_id %]'></td></tr>
 
 [% END %]
 
