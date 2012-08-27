@@ -98,6 +98,7 @@ if ( $current_transcodes <= $max_transcodes )
 
 		# Run the transcode job
 		my $lame_command = "lame $lame_params $lame_data $transcode_dir/gb$short_year-$padded_talk_id" .  "mp3.mp3 $upload_dir/gb$short_year-$padded_talk_id" . "mp3.mp3";	
+		log_it("Transcode started for gb$short_year-$padded_talk_id");
 		my $return = system($lame_command);
 
 		log_it("Transcode result: $? \nReturned data: $return");
