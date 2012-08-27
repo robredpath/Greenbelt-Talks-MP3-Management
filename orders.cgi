@@ -95,7 +95,7 @@ if($post_data->param('order_complete'))
 	my @completed_orders = $post_data->param('order_complete');
 	foreach(@completed_orders)
 	{
-		$sth = $dbh->prepare("UPDATE `orders` SET `completed`=1 WHERE id=? AND year=?");
+		$sth = $dbh->prepare("UPDATE `orders` SET `complete`=1 WHERE id=? AND year=?");
 		$rv = $sth->execute($_, $gb_long_year);
 	}	
 }
@@ -112,21 +112,21 @@ my $orders = $dbh->selectall_hashref("SELECT orders_all_talks.order_id, orders_a
 					orders_all_talks.talks AS all_talks, 
 					orders_available_talks.talks AS available_talks,
                                         (orders_all_talks.talks <=> orders_available_talks.talks) AS fulfillable,
-                                        orders_all_talks.completed
+                                        orders_all_talks.complete
                                         FROM
                                                 (SELECT order_items.order_id, order_items.order_year, 
                                                         group_concat('gb', RIGHT(order_items.talk_year, 2), '-', 
-                                                                IF(LENGTH(order_items.talk_id)=1, LPAD(order_items.talk_id, 2, '00'), order_items.talk_id)) as talks, 
-                                                        completed 
+                                                                LPAD(order_items.talk_id, 3, '000')) as talks, 
+                                                        complete 
                                                 FROM orders 
                                                 INNER JOIN order_items 
                                                         ON (orders.id, orders.year) = (order_items.order_id, order_items.order_year) 
                                                 GROUP BY order_year, order_id
-						ORDER BY order_id ASC) orders_all_talks,
+						ORDER BY order_id ASC) orders_all_talks LEFT JOIN
                                         (SELECT order_items.order_id, order_items.order_year, 
                                                         group_concat('gb', RIGHT(order_items.talk_year, 2), '-', 
-                                                                IF(LENGTH(order_items.talk_id)=1, LPAD(order_items.talk_id, 2, '00'), order_items.talk_id)) as talks, 
-                                                        completed 
+                                                                LPAD(order_items.talk_id, 3, '000')) as talks, 
+                                                        complete 
                                                 FROM orders 
                                                 INNER JOIN order_items 
                                                         ON (orders.id, orders.year) = (order_items.order_id, order_items.order_year) 
@@ -134,8 +134,8 @@ my $orders = $dbh->selectall_hashref("SELECT orders_all_talks.order_id, orders_a
                                                 WHERE talks.available=1 
 						GROUP BY order_year, order_id
 						ORDER BY order_id ASC) orders_available_talks
-                                        WHERE (orders_all_talks.order_id, orders_all_talks.order_year) = (orders_available_talks.order_id, orders_available_talks.order_year)
-                                        ", ['completed','fulfillable','order_id']);
+                                        ON (orders_all_talks.order_id, orders_all_talks.order_year) = (orders_available_talks.order_id, orders_available_talks.order_year)
+                                        ", ['complete','fulfillable','order_id']);
 
 warn Dumper($orders);
 

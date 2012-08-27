@@ -1,8 +1,9 @@
 #page {
 	position: absolute;
-	width: 800px;
+	width: 960px;
 	text-align: center;
 	font-family: sans-serif;
+	margin: 0px auto;
 }
 
 #logo {
@@ -25,32 +26,42 @@
 
 #new_order_form {
 	position: relative;
-	width: 800px;
+	width: 900px;
 	text-align: left;
 	background-color: rgb(200,200,255);
 	padding:10px;
 	border: 1px solid rgb(100,100,255);
-	margin: 10px;
+	margin: 0px auto;
 }
 
 #available_talks {
 	position: relative;
-        width: 800px;
+        width: 900px;
         text-align: left;
         background-color: rgb(200,200,255);
         padding:10px;
         border: 1px solid rgb(100,100,255);
-	margin: 10px;
+	margin: 0px auto;
 }
 
 #saved_orders {
         position: relative;
-        width: 800px;
+        width: 860px;
         text-align: left;
         background-color: rgb(200,200,255);
         padding:10px;
         border: 1px solid rgb(100,100,255);
-	margin: 10px;
+	margin: 0px auto; 
+}
+
+#completed_orders {
+        position: relative;
+        width: 860px;
+        text-align: left;
+        background-color: rgb(200,200,255);
+        padding:10px;
+        border: 1px solid rgb(100,100,255);
+        margin: 0px auto;
 }
 
 #status_message {

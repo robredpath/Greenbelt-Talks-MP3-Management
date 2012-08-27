@@ -1,4 +1,4 @@
-#!/usr/bin/perl -T
+#!/usr/bin/perl
 
 BEGIN {
         push @INC, '.';
@@ -35,9 +35,9 @@ my $conf = $gb->{conf};
 
 # Set up the environment
 $CGI::POST_MAX = 1024 * 512000; # 512MB should be enough for what we're doing!
-my $upload_dir = $1 if $conf->{'upload_dir'} =~ /[0-9a-zA-Z\/\.]/ or die "Invalid upload dir specified";
-my $transcode_dir = $1 if $conf->{'transcode_dir'} =~ /[0-9a-zA-Z\/\.]/ or die "Invalid transcode dir specified";
-my $gb_short_year = $1 if $conf->{'gb_short_year'} =~ /(^[0-9]{2}$)/;
+my $upload_dir = $conf->{'upload_dir'};
+my $transcode_dir = $conf->{'transcode_dir'};
+my $gb_short_year = $conf->{'gb_short_year'};
 my $gb_long_year = "20$gb_short_year";
 my $sth;
 my $rv;
@@ -62,9 +62,12 @@ if ($post_data->param('talk_id') && $post_data->upload('talk_data') && $post_dat
 	my $talk_data = $post_data->upload('talk_data');
 	my $snip_data = $post_data->upload('snip_data');
 
+	my $pad_len=3;
+        my $padded_talk_id = sprintf("%0${pad_len}d", $talk_id);
+
 	# Open snip file for writing
 	
-	my $snip_filename = "gb$gb_short_year-$talk_id" . "snip.mp3";
+	my $snip_filename = "gb$gb_short_year-$padded_talk_id" . "snip.mp3";
         warn "$upload_dir/$snip_filename";
         open TALK, ">$upload_dir/$snip_filename" or warn $!;
 
@@ -80,7 +83,7 @@ if ($post_data->param('talk_id') && $post_data->upload('talk_data') && $post_dat
         
 
 	# Open file for writing with appropriate name
-	my $mp3_filename = "gb$gb_short_year-$talk_id" . "mp3.mp3";
+	my $mp3_filename = "gb$gb_short_year-$padded_talk_id" . "mp3.mp3";
 	warn "$transcode_dir/$mp3_filename";
 	open TALK, ">$transcode_dir/$mp3_filename" or warn $!;
 

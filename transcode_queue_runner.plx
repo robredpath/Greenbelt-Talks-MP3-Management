@@ -1,7 +1,7 @@
-#!/usr/bin/perl -T
+#!/usr/bin/perl
 
 BEGIN {
-        push @INC, '.';
+        push @INC, '.', '/var/www/html';
 }
 
 use strict;
@@ -23,12 +23,12 @@ my $gb = GB->new("../gb_talks.conf");
 my $dbh = $gb->{db};
 my $conf = $gb->{conf};
 
-my $upload_dir = $1 if $conf->{'upload_dir'} =~ /[0-9a-zA-Z\/\.]/ or die "Invalid upload dir specified";
-my $transcode_dir = $1 if $conf->{'transcode_dir'} =~ /[0-9a-zA-Z\/\.]/ or die "Invalid transcode dir specified";
+my $upload_dir = $conf->{'upload_dir'};
+my $transcode_dir = $conf->{'transcode_dir'};
 
 my $sth;
 my $lame_params = "--abr 96 -q2 --mp3input -S -m j -c";
-my $short_year = $1 if $conf->{'gb_short_year'} =~ /([0-9]{2})/;
+my $short_year = $conf->{'gb_short_year'};
 my $gb_long_year = "20$short_year";
 
 $ENV{PATH} = "/bin:/usr/bin";
@@ -72,9 +72,12 @@ if ( $current_transcodes <= $max_transcodes )
 	my $talk_pos = $current_transcodes-1;
 	my $talk_id = $queue[$talk_pos];
 	
+	my $pad_len=3;
+        my $padded_talk_id = sprintf("%0${pad_len}d", $talk_id);
+	
 	if ($talk_id)
 	{	
-		$0 = "transcode_queue_runner.plx - gb$short_year-$talk_id" . "mp3.mp3";	
+		$0 = "transcode_queue_runner.plx - gb$short_year-$padded_talk_id" . "mp3.mp3";	
 	
 		# Get the metadata
 		$sth = $dbh->prepare("SELECT speaker, title FROM talks WHERE id=?");
@@ -85,14 +88,17 @@ if ( $current_transcodes <= $max_transcodes )
                 	push @talk_data, $data[0];
 			push @talk_data, $data[1];
         	}
-        	my $talk_speaker = pop @talk_data;
+		
 		my $talk_title = pop @talk_data;
+		my $talk_speaker = pop @talk_data;
+
 	
 		# Set up metadata to pass to LAME
 		my $lame_data = " --id3v2-only --tt \"$talk_title\" --ta \"$talk_speaker\" --tl \"Greenbelt Festival Talks 20$short_year\" --ty 20$short_year --tn $talk_id";
 
 		# Run the transcode job
-		my $lame_command = "lame $lame_params $lame_data ./gb_talks_upload/gb$short_year-$talk_id" .  "mp3.mp3 ./upload_queue/gb$short_year-$talk_id" . "mp3.mp3";	
+		my $lame_command = "lame $lame_params $lame_data $transcode_dir/gb$short_year-$padded_talk_id" .  "mp3.mp3 $upload_dir/gb$short_year-$padded_talk_id" . "mp3.mp3";	
+		log_it("Transcode started for gb$short_year-$padded_talk_id");
 		my $return = system($lame_command);
 
 		log_it("Transcode result: $? \nReturned data: $return");
@@ -102,7 +108,7 @@ if ( $current_transcodes <= $max_transcodes )
 		# Remove the item from the queue
 		$sth = $dbh->prepare('DELETE FROM transcode_queue where talk_id=?');
 		$sth->execute($talk_id);
-		$sth = $dbh->prepare('INSERT INTO upload_queue(sequence, priority, talk_id, talk_year) VALUES (NULL,?,?,?)');
+		$sth = $dbh->prepare('INSERT INTO upload_queue(priority, talk_id, talk_year) VALUES (?,?,?)');
 		$sth->execute(2,$talk_id,$gb_long_year);
 		$sth = $dbh->prepare('UPDATE talks SET available=1 WHERE id=? AND year=?');
 		$sth->execute($talk_id, $gb_long_year);

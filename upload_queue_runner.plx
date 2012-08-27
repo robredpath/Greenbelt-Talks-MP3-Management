@@ -1,7 +1,7 @@
-#!/usr/bin/perl -T
+#!/usr/bin/perl
 
 BEGIN {
-        push @INC, '.';
+        push @INC, '.', '/var/www/html';
 }
 
 use strict;
@@ -27,14 +27,14 @@ my $gb = GB->new("../gb_talks.conf");
 my $dbh = $gb->{db};
 my $conf = $gb->{conf};
 
-my $upload_dir = $1 if $conf->{'upload_dir'} =~ /[0-9a-zA-Z\/\.]/ or die "Invalid upload dir specified";
+my $upload_dir = $conf->{'upload_dir'};
 
-my $short_year = $1 if $conf->{'gb_short_year'} =~ /([0-9]{2})/;
-my $upload_host = $1 if $conf->{'upload_host'} =~ /([a-zA-Z0-9\.]+)/;
-my $upload_user = $1 if $conf->{'upload_user'} =~ /([a-zA-Z0-9\.]+)/;
-my $upload_pass = $1 if $conf->{'upload_pass'} =~ /([a-zA-Z0-9\.]+)/;
-my $upload_path = $1 if $conf->{'upload_path'} =~ /([a-zA-Z0-9\.\/~]+)/;
-my $upload_method = $1 if $conf->{'upload_method'} =~ /([a-zA-Z0-9\.]+)/;
+my $short_year = $conf->{'gb_short_year'};
+my $upload_host = $conf->{'upload_host'};
+my $upload_user = $conf->{'upload_user'};
+my $upload_pass = $conf->{'upload_pass'};
+my $upload_path = $conf->{'upload_path'};
+my $upload_method = $conf->{'upload_method'};
 
 my $sth;
 
@@ -77,24 +77,32 @@ if ( $current_uploads <= $max_uploads )
 	
         my $talk_pos = $current_uploads-1;
         my $talk_id = $queue[$talk_pos];
-
+	
+	my $pad_len=3;
+	my $padded_talk_id = sprintf("%0${pad_len}d", $talk_id);
 	
 	log_it("No talk - aborting") unless $talk_id;
 
 	alarm(3600); # Let the script run for an hour. If it takes longer than that, we want to quit, log any results, and let another process start up to resume the transfer. 
+
+	my $mp3_filename;
+	my $snip_filename;	
+	my $snip_upload_succeeded = 0;
+        my $snip_md5;
+        my $mp3_upload_succeeded;
+        my $mp3_md5;
+
+	
 	if($talk_id && $upload_method eq "rsync")
 	{	
-		my $mp3_filename = "gb$short_year-$talk_id" . "mp3.mp3";
-		my $snip_filename = "gb$short_year-$talk_id" . "snip.mp3";
+		$mp3_filename = "gb$short_year-$padded_talk_id" . "mp3.mp3";
+		$snip_filename = "gb$short_year-$padded_talk_id" . "snip.mp3";
 		$0 = "upload_queue_runner.plx - $mp3_filename";	
 		
 		log_it("Uploading $snip_filename");	
 
 		# Upload the snip file
 		system("rsync --partial $upload_dir/$snip_filename $upload_user\@$upload_host:$upload_path/$snip_filename");
-
-		my $snip_upload_succeeded = 0;
-		my $snip_md5;
 
 		# Check what return code rsync gave to determine how it did at the upload
 
@@ -108,23 +116,12 @@ if ( $current_uploads <= $max_uploads )
 			$snip_upload_succeeded = 1;
 			my $log_message = sprintf "rsync for snippet $snip_filename: child exited with value %d\n", $? >> 8;
                         log_it($log_message);
-                        my $ctx = Digest::MD5->new;
-                        open FILE, "<$upload_dir/$snip_filename";
-                        binmode(FILE);
-                        while(<FILE>) {
-                                $ctx->add($_);
-                        }
-                        $snip_md5 = $ctx->hexdigest;
 		}
 
 
 		# Upload the actual mp3
 		log_it("Uploading $mp3_filename");
 		system("rsync --partial $upload_dir/$mp3_filename $upload_user\@$upload_host:$upload_path/$mp3_filename");
-
-		my $mp3_upload_succeeded;
-		my $mp3_md5;
-
 
 		# Check what return code rsync gave to determine how it did at the upload
 		if ($? == -1) {
@@ -138,10 +135,10 @@ if ( $current_uploads <= $max_uploads )
 			log_it($log_message);
 			$mp3_upload_succeeded = 1;
 		}
-	} else if ($talk_id and $upload_method eq "object_storage") {
+	} elsif ($talk_id and $upload_method eq "object_storage") {
 		
-		my $mp3_filename = "gb$short_year-$talk_id" . "mp3.mp3";
-                my $snip_filename = "gb$short_year-$talk_id" . "snip.mp3";
+		$mp3_filename = "gb$short_year-$padded_talk_id" . "mp3.mp3";
+                $snip_filename = "gb$short_year-$padded_talk_id" . "snip.mp3";
                 $0 = "upload_queue_runner.plx - $mp3_filename";
 
                 log_it("Uploading $snip_filename");
@@ -158,7 +155,49 @@ if ( $current_uploads <= $max_uploads )
 		my $auth_key = $res->header('X-Auth-Token');
 		my $storage_url = $res->header('X-Storage-Url');
 
+		my $snip_location = "$upload_dir/$snip_filename";	
+		$req = HTTP::Request->new(PUT => "$storage_url/$upload_path/$snip_filename");
+
+		$req->header('X-Auth-Token' => $auth_key);
+		
+		my $snip_data;
+		open(SNIP, "<$snip_location");
+		foreach(<SNIP>) {
+			$snip_data .= $_;
+		}
+		$req->content($snip_data);
+		close(SNIP);
+		
+		log_it("Starting snip upload for talk_id $talk_id");	
+		$res = $ua->request($req);
+		my $snip_response = $res->code();
+		
+		log_it("Snip upload returned $snip_response");
+			
+		if (int($snip_response/100) == 2) {
+			$snip_upload_succeeded = 1;
+		}
+		
 		$req = HTTP::Request->new(PUT => "$storage_url/$upload_path/$mp3_filename");
+		$req->header('X-Auth-Token' => $auth_key);
+		my $mp3_location = "$upload_dir/$mp3_filename";
+		my $mp3_data;
+                open(MP3, "<$mp3_location");
+                foreach(<MP3>) {
+                        $mp3_data .= $_;
+                }
+                $req->content($mp3_data);
+                close(MP3);		
+		
+		log_it("Starting MP3 upload for talk_id $talk_id");
+                $res = $ua->request($req);
+
+		my $mp3_response = $res->code();
+		log_it("MP3 upload returned $mp3_response");
+
+                if (int($mp3_response/100) == 2) {
+                        $mp3_upload_succeeded = 1;
+                }
 
 	}	
 	
@@ -172,12 +211,19 @@ if ( $current_uploads <= $max_uploads )
 		}
 		my $file_md5 = $ctx->hexdigest;
 			
+                open FILE, "<$upload_dir/$snip_filename";
+                binmode(FILE);
+                while(<FILE>) {
+                        $ctx->add($_);
+                }
+                my $snip_md5 = $ctx->hexdigest;
+
 		$ctx->add("action=make-available&checksum=$file_md5&snippet_checksum=$snip_md5");
 		$ctx->add($conf->{'api_secret'});
 
 		# Try to send the talk live. Log any errors. 
 
-		my $api_url = $conf->{'api_url'} . "GB$short_year-$talk_id";
+		my $api_url = $conf->{'api_url'} . "GB$short_year-$padded_talk_id";
 		my $browser = LWP::UserAgent->new;
 		my $response = $browser->post("$api_url", [action => 'make-available', checksum => $file_md5, snippet_checksum => $snip_md5, sig => $ctx->hexdigest ]);		
 		if ($response->{_rc} == 200) { # If the API call returns 200 (OK) 
@@ -190,6 +236,8 @@ if ( $current_uploads <= $max_uploads )
 			my $response_dump = Dumper($response);
 			log_it("API call for $mp3_filename failed. Here's the response: \n\n$response_dump");
 		}		
+	} else {
+			log_it("Aborting due to upload failures");
 	}
 	alarm(0);
 }

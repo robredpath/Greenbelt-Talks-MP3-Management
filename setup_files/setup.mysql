@@ -10,6 +10,7 @@ CREATE TABLE `talks`(
 `available` INT(1) DEFAULT 0 NOT NULL,
 `priority` INT(2) DEFAULT 10 NOT NULL,
 `uploaded` TINYINT(1) DEFAULT 0 NOT NULL,
+`start_time` DATETIME DEFAULT 0 NOT NULL,
 PRIMARY KEY (`id`, `year`)
 ) ENGINE = InnoDB;
 
@@ -40,7 +41,7 @@ CONSTRAINT `fk_order_items_order`
 ) ENGINE = InnoDB;
 
 CREATE TABLE `upload_queue` (
-`sequence` INT(3) PRIMARY KEY NOT NULL,
+`sequence` INT(3) PRIMARY KEY NOT NULL AUTO_INCREMENT,
 `priority` INT(1) NOT NULL,
 `talk_id` INT(3) UNIQUE NOT NULL,
 `talk_year` YEAR(4) NOT NULL,
@@ -52,7 +53,7 @@ CONSTRAINT `fk_upload_queue_talk`
 ENGINE = InnoDB;
 
 CREATE TABLE `transcode_queue` (
-`sequence` INT(3) PRIMARY KEY NOT NULL,
+`sequence` INT(3) PRIMARY KEY NOT NULL AUTO_INCREMENT,
 `priority` INT(1) NOT NULL,
 `talk_id` INT(3) UNIQUE NOT NULL,
 `talk_year` YEAR(4) NOT NULL,
