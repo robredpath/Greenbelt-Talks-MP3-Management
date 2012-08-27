@@ -128,7 +128,7 @@ if($post_data->{'param'}->{'form_name'})
 
                         # Try to suspend the talk. Log any errors. 
                         
-			my $api_url = $conf->{'api_url'} . "GB11-@{$post_data->{'param'}->{'talk_suspend'}}[0]";
+			my $api_url = $conf->{'api_url'} . "GB$gb_short_year-@{$post_data->{'param'}->{'talk_suspend'}}[0]";
                         my $browser = LWP::UserAgent->new;
                         my $response = $browser->post("$api_url", [action => 'suspend', sig => $ctx->hexdigest ]);
                         if ($response->{_rc} == 200) {
@@ -136,7 +136,7 @@ if($post_data->{'param'}->{'form_name'})
 			}
 			                        else {
                                 my $response_dump = Dumper($response);
-                                log_it("API call for suspending GB11-@{$post_data->{'param'}->{'talk_suspend'}}[0] failed. Here's the response: \n\n$response_dump");
+                                log_it("API call for suspending GB$gb_short_year-@{$post_data->{'param'}->{'talk_suspend'}}[0] failed. Here's the response: \n\n$response_dump");
                         }
 
 	
@@ -149,14 +149,14 @@ if($post_data->{'param'}->{'form_name'})
 
                         # Try to send the talk live. Log any errors. 
                         
-                        my $api_url = $conf->{'api_url'} . "GB11-@{$post_data->{'param'}->{'talk_replace'}}[0]";
+                        my $api_url = $conf->{'api_url'} . "GB$gb_short_year-@{$post_data->{'param'}->{'talk_replace'}}[0]";
                         my $browser = LWP::UserAgent->new;
                         my $response = $browser->post("$api_url", [action => 'replace', sig => $ctx->hexdigest ]);
                         if ($response->{_rc} == 200) {
                         
 			} else {
                         	my $response_dump = Dumper($response);
-                                log_it("API call for replacing GB11-@{$post_data->{'param'}->{'talk_replace'}}[0] failed. Here's the response: \n\n$response_dump");
+                                log_it("API call for replacing GB$gb_short_year-@{$post_data->{'param'}->{'talk_replace'}}[0] failed. Here's the response: \n\n$response_dump");
                         }
                     
                 
@@ -260,7 +260,7 @@ END
 
 $output_html .= <<END;
 <div id="upload_queue" class="blue_box">
-<h3>Upload Queue - Currently uploading: gb11-110</h3>
+<h3>Upload Queue - Currently uploading: gb$gb_short_year-xxx</h3>
 END
 
 if(@upload_queue) {
