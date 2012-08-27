@@ -224,7 +224,7 @@ if(@transcode_queue) {
 	$output_html .= <<END;
 <table>
 <tr><td>Talk ID</td><td>Priority (Low - Med - High)</td></tr>
-<form method="post" action="admin.plx">
+<form method="post">
 END
 
 	foreach my $talk (@transcode_queue)
@@ -268,7 +268,7 @@ if(@upload_queue) {
         $output_html .= <<END;
 <table>
 <tr><td>Talk ID</td><td>Priority (Low - Med - High)</td></tr>
-<form method="post" action="admin.plx">
+<form method="post">
 END
 
         foreach my $talk (@upload_queue)
