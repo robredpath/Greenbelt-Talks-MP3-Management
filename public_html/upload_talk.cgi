@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 BEGIN {
-        push @INC, '.';
+        push @INC, '.' , '..';
 }
 
 use strict;
@@ -29,7 +29,7 @@ use DBI;
 
 use GB;
 
-my $gb = GB->new("../gb_talks.conf");
+my $gb = GB->new("../../gb_talks.conf");
 my $dbh = $gb->{db};
 my $conf = $gb->{conf};
 
