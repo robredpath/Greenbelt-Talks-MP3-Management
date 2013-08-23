@@ -4,7 +4,7 @@ use strict;
 use warnings;
 
 BEGIN {
-	push @INC, '.', '..';
+	push @INC, '.', '..', '../templates';
 }
 
 #************************************************************************
@@ -31,7 +31,7 @@ use Template;
 
 use GB;
 
-my $gb = GB->new("../gb_talks.conf");
+my $gb = GB->new("../../gb_talks.conf");
 my $dbh = $gb->{db}; 
 my $conf = $gb->{conf};
 
@@ -158,7 +158,7 @@ my $output_vars = {
 warn Dumper($output_vars);
 
 my $tt = Template->new({
-	INCLUDE_PATH => '/var/www/html/templates'
+	INCLUDE_PATH => '/home/gb13/Greenbelt-Talks-MP3-Management/templates'
 });
 
 
