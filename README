@@ -6,6 +6,8 @@ Perl 5 with
 LWP
 CGI
 Digest::MD5
+Template
+
 
 Installation:- 
 Copy gb_talks.conf to somewhere non-world-readable, make it readable by your web server and set it up as you want. 
