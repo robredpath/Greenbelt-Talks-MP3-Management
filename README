@@ -8,6 +8,11 @@ CGI
 Digest::MD5
 Template
 Text::CSV
+LWP::Protocol::https
+
+RPMs
+rpmforge
+lame
 
 Installation:- 
 Copy gb_talks.conf to somewhere non-world-readable, make it readable by your web server and set it up as you want. 
