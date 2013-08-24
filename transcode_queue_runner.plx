@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 BEGIN {
-        push @INC, '.', '/var/www/html';
+        push @INC, '.', '/home/gb13/Greenbelt-Talks-MP3-Management';
 }
 
 use strict;
@@ -15,7 +15,7 @@ use warnings;
 #####################################################
 
 use DBI;
-chdir "/var/www/html/" or log_it("chdir failed");
+chdir "/home/gb13/Greenbelt-Talks-MP3-Management" or log_it("chdir failed");
 
 use GB;
 

@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 BEGIN {
-        push @INC, '.', '/var/www/html';
+        push @INC, '.', '/home/gb13/Greenbelt-Talks-MP3-Management';
 }
 
 use strict;
@@ -14,7 +14,7 @@ use warnings;
 #
 #####################################################
 
-chdir "/var/www/html/";
+chdir "/home/gb13/Greenbelt-Talks-MP3-Management";
 
 use DBI;
 use LWP;
@@ -144,14 +144,13 @@ if ( $current_uploads <= $max_uploads )
                 log_it("Uploading $snip_filename");
 
 		my $ua = LWP::UserAgent->new;
-		$ua->agent("GB Talks Team - test server");
+		$ua->agent("GB Talks Team - live server");
 
 		my $req = HTTP::Request->new(GET => 'https://auth.storage.memset.com/v1.0');
 		$req->header('X-Auth-Key' => $upload_pass);
 		$req->header('X-Auth-User' => $upload_user);
 
 		my $res = $ua->request($req);
-
 		my $auth_key = $res->header('X-Auth-Token');
 		my $storage_url = $res->header('X-Storage-Url');
 
@@ -171,7 +170,6 @@ if ( $current_uploads <= $max_uploads )
 		log_it("Starting snip upload for talk_id $talk_id");	
 		$res = $ua->request($req);
 		my $snip_response = $res->code();
-		
 		log_it("Snip upload returned $snip_response");
 			
 		if (int($snip_response/100) == 2) {
