@@ -4,7 +4,7 @@ use strict;
 use warnings;
 
 BEGIN {
-        push @INC, '.';
+        push @INC, '.', '..';
 }
 
 use DBI;
@@ -23,7 +23,7 @@ my $sth;
 
 my $file = 'gb_talks_list.csv';
 my $csv = Text::CSV->new({
-	sep_char => ';',
+	sep_char => ',',
 	binary => 1
 });
 
@@ -33,9 +33,9 @@ foreach (<CSV>) {
 	if ($csv->parse($_)) {
 		my @columns = $csv->fields();
 		my (undef, $talk_id) = split(/-/, $columns[0]);
-		my $year = 2012;
-		my $speaker = $columns[1];
-		my $title = $columns[2];
+		my $year = 2013;
+		my $speaker = $columns[3];
+		my $title = $columns[1];
 		print "$talk_id  $speaker  $title\n";
 		$sth = $dbh->prepare("INSERT INTO `talks`(`id`,`year`,`speaker`,`title`,`available`,`uploaded`) VALUES (?,?,?,?,0,0)");
 		$sth->execute($talk_id, $year, $speaker, $title);
