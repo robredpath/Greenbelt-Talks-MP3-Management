@@ -27,7 +27,7 @@ my $upload_dir = $conf->{'upload_dir'};
 my $transcode_dir = $conf->{'transcode_dir'};
 
 my $sth;
-my $lame_params = "--abr 96 -q2 --mp3input -S -m j -c";
+my @lame_params = ("--abr",  96, "-q2", "--mp3input", "-S", "-m", "j", "-c");
 my $short_year = $conf->{'gb_short_year'};
 my $gb_long_year = "20$short_year";
 
@@ -71,7 +71,8 @@ if ( $current_transcodes <= $max_transcodes )
 	}
 	my $talk_pos = $current_transcodes-1;
 	my $talk_id = $queue[$talk_pos];
-	
+warn $talk_pos;
+warn @queue;	
 	my $pad_len=3;
         my $padded_talk_id = sprintf("%0${pad_len}d", $talk_id);
 	
@@ -94,12 +95,14 @@ if ( $current_transcodes <= $max_transcodes )
 
 	
 		# Set up metadata to pass to LAME
-		my $lame_data = " --id3v2-only --tt \"$talk_title\" --ta \"$talk_speaker\" --tl \"Greenbelt Festival Talks 20$short_year\" --ty 20$short_year --tn $talk_id";
+		my @lame_data = ('--id3v2-only', '--tt', $talk_title, '--ta', $talk_speaker, '--tl', "Greenbelt Festival Talks 20$short_year", '--ty', '20$short_year', '--tn', $talk_id);
 
 		# Run the transcode job
-		my $lame_command = "lame $lame_params $lame_data $transcode_dir/gb$short_year-$padded_talk_id" .  "mp3.mp3 $upload_dir/gb$short_year-$padded_talk_id" . "mp3.mp3";	
+		#my $lame_command = "lame $lame_params $lame_data $transcode_dir/gb$short_year-$padded_talk_id" .  "mp3.mp3 $upload_dir/gb$short_year-$padded_talk_id" . "mp3.mp3";	
+		my $transcode_filename = "$transcode_dir/gb$short_year-$padded_talk_id" .  "mp3.mp3" ;
+		my $upload_filename = "$upload_dir/gb$short_year-$padded_talk_id" . "mp3.mp3";
 		log_it("Transcode started for gb$short_year-$padded_talk_id");
-		my $return = system($lame_command);
+		my $return = system("lame", @lame_params, @lame_data, $transcode_filename, $upload_filename);
 
 		log_it("Transcode result: $? \nReturned data: $return");
 	
