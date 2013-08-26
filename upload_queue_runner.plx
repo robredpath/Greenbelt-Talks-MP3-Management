@@ -67,20 +67,20 @@ my $current_uploads = $1 if `ls /var/run/gb_upload* | wc -l` =~ /([0-9]+)/;
 if ( $current_uploads <= $max_uploads )
 {
 	# Get the next talk to upload - highest priority first, oldest first. Let's assume that we're only uploading talks for the current year
-	$sth = $dbh->prepare("SELECT talk_id FROM upload_queue ORDER BY priority DESC, sequence ASC LIMIT 1;");
-	$sth->execute;
+	$sth = $dbh->prepare("SELECT talk_id FROM upload_queue ORDER BY priority DESC, sequence ASC LIMIT ?;");
+	$sth->execute($current_uploads);
 	my @queue;
 	while (my @data = $sth->fetchrow_array)
 	{
 		push @queue, $data[0]; 
 	}
-	
+warn @queue;	
         my $talk_pos = $current_uploads-1;
         my $talk_id = $queue[$talk_pos];
 	
 	my $pad_len=3;
 	my $padded_talk_id = sprintf("%0${pad_len}d", $talk_id);
-	
+warn $padded_talk_id;	
 	log_it("No talk - aborting") unless $talk_id;
 
 	alarm(3600); # Let the script run for an hour. If it takes longer than that, we want to quit, log any results, and let another process start up to resume the transfer. 
@@ -190,12 +190,22 @@ if ( $current_uploads <= $max_uploads )
 		log_it("Starting MP3 upload for talk_id $talk_id");
                 $res = $ua->request($req);
 
+use Data::Dumper;
+$res->{'_request'}->{'_content'} = '';
+warn Dumper($res);
+
 		my $mp3_response = $res->code();
 		log_it("MP3 upload returned $mp3_response");
 
+
+
                 if (int($mp3_response/100) == 2) {
                         $mp3_upload_succeeded = 1;
-                }
+                } else {
+			# Remove the request binary data before dumping it
+			$res->{'_request'}->{'_content'} = '';
+			log_it(Dumper($res));
+		}
 
 	}	
 	
