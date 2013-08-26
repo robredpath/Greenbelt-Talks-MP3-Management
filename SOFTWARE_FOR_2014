@@ -1,0 +1,11 @@
+Write two bits of software 
+
+- an Excel spreadsheet parser (probably actually CSV) from the talks list leaflet
+> Read in
+> Parse dates/location field
+> Store in db
+
+- an app to automatically assign recording people to talks based on alphabetical ordering
+
+- an app to produce a web page for the rota, displaying talks, grouped by time slots
+
