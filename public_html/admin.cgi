@@ -104,7 +104,7 @@ if($post_data->{'param'}->{'form_name'})
         		push @transcode_queue, $row;
 		}
 
-	} elsif ($post_data->{'form_name'} eq "upload_queue") {
+	} elsif ($post_data->{'param'}->{'form_name'} eq "upload_queue") {
                 foreach(@upload_queue)
                 {
                         my $talk_id = $_->{'talk_id'};
