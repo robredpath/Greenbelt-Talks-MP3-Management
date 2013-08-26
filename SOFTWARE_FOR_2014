@@ -12,3 +12,5 @@ Write two bits of software
 - a status screen for the office for stats and warnings
 
 - electronic check in/out for media; text people if they don't check in in time?
+
+- give the shop access to orders.cgi so that they can submit their own orders
