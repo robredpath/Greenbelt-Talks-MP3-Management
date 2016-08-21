@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 BEGIN {
-        push @INC, '.', '/var/www/Greenbelt-Talks-MP3-Management';
+        push @INC, '.', '/var/www/';
 }
 
 use strict;
@@ -15,11 +15,11 @@ use warnings;
 #####################################################
 
 use DBI;
-chdir "/var/www/Greenbelt-Talks-MP3-Management" or log_it("chdir failed");
+chdir "/var/www/" or log_it("chdir failed");
 
 use GB;
 
-my $gb = GB->new("../gb_talks.conf");
+my $gb = GB->new("gb_talks.conf");
 my $dbh = $gb->{db};
 my $conf = $gb->{conf};
 
