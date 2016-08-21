@@ -10,6 +10,7 @@ Template (perl-TemplateToolkit)
 Text::CSV (perl-Text-CSV)
 LWP::Protocol::https (perl-LWP-Protocol-https)
 DateTime (perl-DateTime)
+Time::ParseDate (perl-Time-ParseDate)
 
 RPMs
 rpmforge
