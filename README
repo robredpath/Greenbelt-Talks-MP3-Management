@@ -3,12 +3,13 @@ This is the order processing system for Greenbelt Festival's Talks Team.
 Prerequisites:-
 
 Perl 5 with
-LWP
-CGI
+LWP (perl-libwww-perl)
+CGI (perl-CGI)
 Digest::MD5
-Template
-Text::CSV
-LWP::Protocol::https
+Template (perl-TemplateToolkit)
+Text::CSV (perl-Text-CSV)
+LWP::Protocol::https (perl-LWP-Protocol-https)
+DateTime (perl-DateTime)
 
 RPMs
 rpmforge
