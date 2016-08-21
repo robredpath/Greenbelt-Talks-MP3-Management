@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 BEGIN {
-        push @INC, '.', '/home/gb13/Greenbelt-Talks-MP3-Management';
+        push @INC, '.', '/var/www/Greenbelt-Talks-MP3-Management';
 }
 
 use strict;
@@ -15,7 +15,7 @@ use warnings;
 #####################################################
 
 use DBI;
-chdir "/home/gb13/Greenbelt-Talks-MP3-Management" or log_it("chdir failed");
+chdir "/var/www/Greenbelt-Talks-MP3-Management" or log_it("chdir failed");
 
 use GB;
 
@@ -27,11 +27,11 @@ my $upload_dir = $conf->{'upload_dir'};
 my $transcode_dir = $conf->{'transcode_dir'};
 
 my $sth;
-my @lame_params = ("--abr",  96, "-q2", "--mp3input", "-S", "-m", "j", "-c");
+my @lame_params = ("--abr",  128, "-q2", "--mp3input", "-S", "-m", "j", "-c");
 my $short_year = $conf->{'gb_short_year'};
 my $gb_long_year = "20$short_year";
 
-$ENV{PATH} = "/bin:/usr/bin";
+$ENV{PATH} = "/bin:/usr/bin:/usr/local/bin";
 
 sub log_it {
         my $message = $_[0];
@@ -122,7 +122,7 @@ warn @queue;
 else
 {
 	log_it("Too many transcode jobs already running");
-	`rm /var/run/gb_transcode$$`;
+	`rm /var/run/gb_transcode$$`;	
 	die;
 }
 

@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 BEGIN {
-        push @INC, '.', '/home/gb13/Greenbelt-Talks-MP3-Management';
+        push @INC, '.', '/var/www/Greenbelt-Talks-MP3-Management';
 }
 
 use strict;
@@ -14,7 +14,7 @@ use warnings;
 #
 #####################################################
 
-chdir "/home/gb13/Greenbelt-Talks-MP3-Management";
+chdir "/var/www/Greenbelt-Talks-MP3-Management";
 
 use DBI;
 use LWP;
@@ -151,7 +151,8 @@ warn $padded_talk_id;
 		$req->header('X-Auth-User' => $upload_user);
 
 		my $res = $ua->request($req);
-		my $auth_key = $res->header('X-Auth-Token');
+print Dumper ($res);		
+my $auth_key = $res->header('X-Auth-Token');
 		my $storage_url = $res->header('X-Storage-Url');
 
 		my $snip_location = "$upload_dir/$snip_filename";	

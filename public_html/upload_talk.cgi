@@ -85,7 +85,8 @@ if ($post_data->param('talk_id') && $post_data->upload('talk_data') && $post_dat
 	# Open file for writing with appropriate name
 	my $mp3_filename = "gb$gb_short_year-$padded_talk_id" . "mp3.mp3";
 	warn "$transcode_dir/$mp3_filename";
-	open TALK, ">$transcode_dir/$mp3_filename" or warn $!;
+warn `whoami`;	
+open TALK, ">$transcode_dir/$mp3_filename" or warn $!;
 
 	# Write file
 	binmode TALK;
