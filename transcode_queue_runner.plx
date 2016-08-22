@@ -28,7 +28,7 @@ my $transcode_dir = $conf->{'transcode_dir'};
 my $cd_dir = $conf->{'cd_dir'};
 
 my $sth;
-my @lame_params = ("--abr",  128, "-q2", "--mp3input", "-S", "-m", "j", "-c");
+my @lame_params = ("--abr",  192, "-q2", "--mp3input", "-S", "-m", "j", "-c");
 my $short_year = $conf->{'gb_short_year'};
 my $gb_long_year = "20$short_year";
 
