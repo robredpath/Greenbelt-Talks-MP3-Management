@@ -25,6 +25,7 @@ my $conf = $gb->{conf};
 
 my $upload_dir = $conf->{'upload_dir'};
 my $transcode_dir = $conf->{'transcode_dir'};
+my $cd_dir = $conf->{'cd_dir'};
 
 my $sth;
 my @lame_params = ("--abr",  128, "-q2", "--mp3input", "-S", "-m", "j", "-c");
@@ -40,6 +41,12 @@ sub log_it {
         chomp $date;
         print LOG "[$date] [$$] [$message]\n";
         close LOG;
+}
+
+sub log_it_and_check {
+	`rm /var/run/gb_transcode$$`;
+	log_it("$_[0] return code: $_[1]");
+	exit $_[1]; 
 }
 
 # Create a lockfile
@@ -78,7 +85,8 @@ warn @queue;
 	
 	if ($talk_id)
 	{	
-		$0 = "transcode_queue_runner.plx - gb$short_year-$padded_talk_id" . "mp3.mp3";	
+		my $mp3_filename = "gb$short_year-$padded_talk_id" . "mp3.mp3";
+		$0 = "transcode_queue_runner.plx - $mp3_filename";	
 	
 		# Get the metadata
 		$sth = $dbh->prepare("SELECT speaker, title FROM talks WHERE id=?");
@@ -92,21 +100,34 @@ warn @queue;
 		
 		my $talk_title = pop @talk_data;
 		my $talk_speaker = pop @talk_data;
-
 	
 		# Set up metadata to pass to LAME
-		my @lame_data = ('--id3v2-only', '--tt', $talk_title, '--ta', $talk_speaker, '--tl', "Greenbelt Festival Talks 20$short_year", '--ty', '20$short_year', '--tn', $talk_id);
+		my @lame_data = ('--id3v2-only', '--tt', $talk_title, '--ta', $talk_speaker, '--tl', "Greenbelt Festival Talks 20$short_year", '--ty', "20$short_year", '--tn', $talk_id);
 
 		# Run the transcode job
 		#my $lame_command = "lame $lame_params $lame_data $transcode_dir/gb$short_year-$padded_talk_id" .  "mp3.mp3 $upload_dir/gb$short_year-$padded_talk_id" . "mp3.mp3";	
-		my $transcode_filename = "$transcode_dir/gb$short_year-$padded_talk_id" .  "mp3.mp3" ;
-		my $upload_filename = "$upload_dir/gb$short_year-$padded_talk_id" . "mp3.mp3";
-		log_it("Transcode started for gb$short_year-$padded_talk_id");
-		my $return = system("lame", @lame_params, @lame_data, $transcode_filename, $upload_filename);
+		my $transcode_filename = "$transcode_dir/$mp3_filename" ;
+		my $upload_filename = "$upload_dir/$mp3_filename";
 
-		log_it("Transcode result: $? \nReturned data: $return");
-	
-		# TODO: Add return code checking
+		log_it("Transcode started for $mp3_filename");
+		my $return = system("lame", @lame_params, @lame_data, $transcode_filename, $upload_filename);
+		log_it("Transcode return code: $return");
+		exit if $return != 0; 
+
+		# Now, set up the files for the CD burn
+		
+		# Use FFMPEG to extract those tracks as separate files and save out to cd dir
+		my $full_talk_wav_filename = "$cd_dir/gb$short_year-$padded_talk_id.wav";
+		$return = system("lame", "--decode", $transcode_filename, $full_talk_wav_filename);
+                log_it("MP3 decode return code: $return");
+
+		my $talk_cd_dir = "$cd_dir/gb$short_year-$padded_talk_id";
+		if (! -e $talk_cd_dir)
+		{
+        		mkdir($talk_cd_dir) or die "Could not create CD per-talk dir";
+		}
+		$return = system("ffmpeg", "-i", $full_talk_wav_filename, "-f", "segment", "-segment_time", 300, "-c", "copy", "$talk_cd_dir/gb$short_year-$padded_talk_id-%02d-cd.wav");
+                log_it_and_check("CD split return code: ", $return);
 
 		# Remove the item from the queue
 		$sth = $dbh->prepare('DELETE FROM transcode_queue where talk_id=?');
