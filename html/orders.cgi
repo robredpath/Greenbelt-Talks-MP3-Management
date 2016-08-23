@@ -122,7 +122,7 @@ my $orders = $dbh->selectall_hashref("SELECT orders_all_talks.order_id, orders_a
                                                 INNER JOIN order_items 
                                                         ON (orders.id, orders.year) = (order_items.order_id, order_items.order_year) 
                                                 GROUP BY order_year, order_id
-						ORDER BY order_id ASC) orders_all_talks LEFT JOIN
+						ORDER BY order_id ASC, talk_id ASC) orders_all_talks LEFT JOIN
                                         (SELECT order_items.order_id, order_items.order_year, 
                                                         group_concat('gb', RIGHT(order_items.talk_year, 2), '-', 
                                                                 LPAD(order_items.talk_id, 3, '000')) as talks, 
@@ -133,7 +133,7 @@ my $orders = $dbh->selectall_hashref("SELECT orders_all_talks.order_id, orders_a
                                                 INNER JOIN talks ON (order_items.talk_id, order_items.talk_year) = (talks.id, talks.year) 
                                                 WHERE talks.available=1 
 						GROUP BY order_year, order_id
-						ORDER BY order_id ASC) orders_available_talks
+						ORDER BY order_id ASC, talk_id ASC) orders_available_talks
                                         ON (orders_all_talks.order_id, orders_all_talks.order_year) = (orders_available_talks.order_id, orders_available_talks.order_year)
                                         ", ['complete','fulfillable','order_id']);
 
@@ -158,7 +158,7 @@ my $output_vars = {
 warn Dumper($output_vars);
 
 my $tt = Template->new({
-	INCLUDE_PATH => '/home/gb13/Greenbelt-Talks-MP3-Management/templates'
+	INCLUDE_PATH => '/var/www/templates'
 });
 
 
