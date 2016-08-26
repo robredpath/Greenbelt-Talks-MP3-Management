@@ -1,0 +1,66 @@
+<html>
+<head>
+	<link rel="stylesheet" type="text/css" href="gb_talks.css" />
+</head>
+<body>
+<div id="page">
+<div id="header">
+	<div id="logo">
+		<img src="gb_logo.png" />
+	</div>
+	<h2>Greenbelt Talks - Upload New Talk</h2>
+</div>
+
+
+[% IF error_messages && error_messages.size %]
+
+<div id="error" class="red_box">
+
+<p>An error was encountered whilst processing the request:</p>
+
+        [% FOREACH message in error_messages %]
+
+        <p> [% message %] </p>
+
+        [% END %]
+
+</div>
+
+[% END %]
+
+[% IF status_messages && error_messages.size %]
+
+rdiv id="confirmation" class="green_box">
+
+        [% FOREACH message in error_messages %]
+
+        <p> [% message %] </p>
+
+        [% END %]
+
+</div>
+
+[% END %]
+
+<div id="upload_form">
+	<h3>Select a talk to upload below</h3>
+	<form action="" method="POST" enctype="multipart/form-data">
+	mp3:<input type="file" id="talk_data" name="talk_data"/>
+	snip:<input type="file" id="snip_data" name="snip_data"/>
+	Talk ID: <select name="talk_id" id="talk_id">
+
+[% FOREACH talk IN talks %]
+
+<option value='[% talk %]'>gb[% gb_short_year %]-[% talk %]</option>
+
+[% END %]
+
+</select>
+<input type="submit" value="Upload Talk" name="submit"/>
+</form>
+<p>Note that this will only let you upload talks from 20[% gb_short_year %] - if you're working on anything else, ask Rob for advice</p>
+</div>
+
+</div>
+</body>
+</html>
