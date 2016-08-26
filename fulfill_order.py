@@ -1,4 +1,4 @@
-
+#!/usr/bin/python
 
 import mysql.connector
 #read in the command line argument
@@ -110,7 +110,7 @@ for (order_id, order_year, all_talks, available_talks, fulfillable, complete) in
 			sys.exit()
 		#print("mount /dev/{}1 /media/{}".format(attached_drive,attached_drive))
 		#try and mount a file system
-		mount_output = call("/usr/bin/mount /dev/{}1 /media/{} >/root/mountlog 2>/root/mounterr".format(attached_drive,attached_drive), shell=True)
+		mount_output = call("/usr/bin/mount /dev/{}1 /media/{}".format(attached_drive,attached_drive), shell=True)
 		if mount_output != 0:
 			print ("Can't mount the file system")
 			sys.exit()		
@@ -143,6 +143,8 @@ for (order_id, order_year, all_talks, available_talks, fulfillable, complete) in
 
 cursor.close()
 
+print("Cleaning up the database, please wait...")
+
 #now repoen the cursor
 cursor = cnx.cursor()
 
@@ -154,6 +156,16 @@ cnx.commit()
 cursor.close()
 cnx.close()
 
+print("Setting USB name. Nearly done, please wait...")
+
+# Set USB drive name
+mtools_output = call("MTOOLS_SKIP_CHECK=1 /usr/bin/mlabel -i /dev/{}1 ::GREENBELT".format(attached_drive), shell=True)
+
+print("Unmounting, please wait...")
+
 #unmount usb
+mount_output = call("/usr/bin/umount  /media/{}".format(attached_drive), shell=True)
+
 #prompt user to remove usb
+print ("Please remove USB")
 	

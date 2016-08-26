@@ -34,6 +34,7 @@ open (CSV, "<", $file) or die $!;
 my $sth;
 foreach (<CSV>) {
 	if ($csv->parse($_)) {
+		# Number,Venue Name,Date,Start time,Name,Lineup,Record,Public Description,Show Types,,
 		my @columns = $csv->fields();
 		my (undef, $talk_id) = split(/-/, $columns[0]);
 		my $year = $gb_long_year;

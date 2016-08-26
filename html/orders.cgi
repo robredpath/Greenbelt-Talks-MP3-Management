@@ -116,7 +116,7 @@ my $orders = $dbh->selectall_hashref("SELECT orders_all_talks.order_id, orders_a
                                         FROM
                                                 (SELECT order_items.order_id, order_items.order_year, 
                                                         group_concat('gb', RIGHT(order_items.talk_year, 2), '-', 
-                                                                LPAD(order_items.talk_id, 3, '000')) as talks, 
+                                                                LPAD(order_items.talk_id, 3, '000') ORDER BY order_items.talk_id) as talks, 
                                                         complete 
                                                 FROM orders 
                                                 INNER JOIN order_items 
@@ -125,7 +125,7 @@ my $orders = $dbh->selectall_hashref("SELECT orders_all_talks.order_id, orders_a
 						ORDER BY order_id ASC, talk_id ASC) orders_all_talks LEFT JOIN
                                         (SELECT order_items.order_id, order_items.order_year, 
                                                         group_concat('gb', RIGHT(order_items.talk_year, 2), '-', 
-                                                                LPAD(order_items.talk_id, 3, '000')) as talks, 
+                                                                LPAD(order_items.talk_id, 3, '000') ORDER BY order_items.talk_id) as talks, 
                                                         complete 
                                                 FROM orders 
                                                 INNER JOIN order_items 

@@ -2,64 +2,70 @@
 
 use strict;
 use warnings;
+use Parallel::ForkManager;
+
 
 # copy all the talks to the RAMdisk
-qx|cp -a /var/www/upload /dev/shm/GBTALKS16|;
-# ask the user to start loading USB drives
-print("Please insert a USB drive, or type 'go' to start copying: ");
+qx|mkdir /dev/shm/GBTALKS16; cp -a /var/www/upload/*mp3.mp3 /dev/shm/GBTALKS16|;
 
-my @attached_drives = (");
+my $number_of_disks = $ARGV[0];
+my @attached_drives = ();
 
-while(my $var = <>){
-	print "var: $var";
-	chomp($var);
+my $initial_dmesg_timestamp = "";
 
-	my $initial_dmesg_timestamp = "";
+my $dmesg_output = qx#dmesg | tail -1#;
+$dmesg_output =~ /([0-9]+\.[0-9]+)/ and $initial_dmesg_timestamp = $1;
 
-	my $dmesg_output = qx#dmesg | tail#;
-	$dmesg_output =~ /([0-9]+)/ and $initial_dmesg_timestamp = $1;
-
-	my $current_dmesg_timestamp = $initial_dmesg_timestamp;
-	print("Please insert a USB drive, or type 'go' to start copying");	
+my $current_dmesg_timestamp = $initial_dmesg_timestamp;	
 	
-	while ($initial_dmesg_timestamp == $current_dmesg_timestamp) {
+while ($initial_dmesg_timestamp == $current_dmesg_timestamp) {
 
-		# watch dmesg, identify drive letters, check that inserted drive has a partition and nothing on it
-		$dmesg_output = qx#dmesg | tail#;
-		if ($dmesg_output =~ /([0-9]+)/) {
-        		my $current_dmesg_timestamp = $1;
-		}
+	# ask the user to start loading USB drives
+	print "Please insert a USB drive - " . ($number_of_disks) . " to go: \n";
+
+	# watch dmesg, identify drive letters, check that inserted drive has a partition and nothing on it
+	$dmesg_output = qx#dmesg | tail -1#;
+	$dmesg_output =~ /([0-9]+\.[0-9]+)/ and $current_dmesg_timestamp = $1;
 	
-		if ($current_dmesg_timestamp > $initial_dmesg_timestamp) {
-			# reset the clock so that next loop doesn't just assess the same thing
-			$initial_dmesg_timestamp = $current_dmesg_timestamp;
-
-			# Check that it's a 'new drive' line
-			next unless $dmesg_output =~ /Attached SCSI/;
+	if ($current_dmesg_timestamp > $initial_dmesg_timestamp) {
+		# reset the clock so that next loop doesn't just assess the same thing
+		$initial_dmesg_timestamp = $current_dmesg_timestamp;
 		
-			# Grab the drive letter
-			my $attached_drive = ""; 
-			$dmesg_output =~ /(\[sd[a-z]+\])/ and $attached_drive = $1;
-			warn "No dir in /media for $attached_drive" unless -d "/media/$attached_drive";
+		# Check that it's a 'new drive' line
+		next unless $dmesg_output =~ /Attached SCSI/;
+			
+		# Grab the drive letter
+		my $attached_drive = ""; 
+		$dmesg_output =~ /\[(sd[a-z]+)\]/ and $attached_drive = $1;
+		warn "No dir in /media for $attached_drive \n" unless -d "/media/$attached_drive";
+
+		print "Detected drive: $attached_drive \n";
 		
-			# Mount the disk
-			qx# mount /dev/${attached_drive}1 /media/$attached_drive # or warn "Could not mount disk";
+		# Mount the disk
+		qx#/usr/bin/mount /dev/${attached_drive}1 /media/$attached_drive#;
 
-			@attached_drives.push($attached_drive);
-		}
-
-		# repeat until user says to start copying
-		last if $var eq "go";
+		push @attached_drives, $attached_drive;
+		$number_of_disks--;
 	}
 
-	last if $var eq "go";
+	last if $number_of_disks == 0;
+
+	sleep 1;
 }
 
-print "done!";
+my $pm = new Parallel::ForkManager($ARGV[0]); 
 
-# Start copying!
-#
-
-foreach @attached_drives {
-	print $_;
+foreach my $drive (@attached_drives) {
+	$pm->start and next;
+	print "starting copy to $drive\n";
+	qx#MTOOLS_SKIP_CHECK=1 /usr/bin/mlabel -i /dev/${drive}1 ::GREENBELT#;
+	qx#cp -a /dev/shm/GBTALKS16/* /media/$drive#;
+	qx#/usr/bin/umount /media/$drive#;
+	print "done copying to $drive\n";
+	$pm->finish;
 }
+
+$pm->wait_all_children;
+print "Done! Remove all USB drives\n"
+
+
