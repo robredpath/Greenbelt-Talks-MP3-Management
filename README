@@ -11,6 +11,7 @@ Text::CSV (perl-Text-CSV)
 LWP::Protocol::https (perl-LWP-Protocol-https)
 DateTime (perl-DateTime)
 Time::ParseDate (perl-Time-ParseDate)
+Parallel::ForkManager (perl-Parallel-ForkManager)
 
 RPMs
 rpmforge
@@ -24,11 +25,11 @@ Create a database - setup_scripts/ should create the correct schema for the late
 
 Inputs:-
 The list of talks for the festival - CSV file, parse_talks.plx
-Individual orders for mp3s - Web page, orders.plx
-HQ mp3 files - Web page, upload_talk.plx
+Individual orders for mp3s - Web page, orders.cgi
+HQ mp3 files - Web page, upload_talk.cgi
 
 Processing:-
-Transcode to LQ mp3 - Cron script, transcode_queue_runner.plx
+Transcode to LQ mp3 and setup CD files- Cron script, transcode_queue_runner.plx
 
 Outputs:-
 Upload LQ mp3s to website - Cron script, upload_queue_runner.plx

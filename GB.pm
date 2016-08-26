@@ -3,7 +3,6 @@ use strict;
 
 use DBI;
 
-
 sub new {
 
 	my $gb_o; # This is what gets blessed at the end 
