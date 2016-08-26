@@ -1,22 +1,32 @@
-#!/usr/bin/python
+
 
 import mysql.connector
 #read in the command line argument
 
 import sys
-from subprocess import check_output # creates a new command in this program which is loaded from an external subprocess
+from subprocess import check_output, call # creates a new command in this program which is loaded from an external subprocess
 #this is in there so we can use Dmesg to check for the USB
 
 import re
 import time
+import os.path
+import shutil
 
 orderid = sys.argv[1] #this takes the order number from the user input and assignes it to the orderid variable
 
 #get the list of talks for that order from the database
 
-cnx = mysql.connector.connect(user='gbtalks', password='WVmrQjkHlcTWCG5R',
-                              host='localhost',
-                              database='gb_talks')
+#open the configureation file
+config_file = open('/var/www/gb_talks.conf')
+
+#parse the config file 
+config = dict([line.split("=") for line in config_file])#this creates a dictionary with the configuration stuff in it
+
+
+cnx = mysql.connector.connect(user=config["mysql_user"].strip(), password=config["mysql_pass"].strip(),
+                              host=config["mysql_host"].strip(),
+                              database=config["mysql_db"].strip())
+
 
 #connects to the msql database to access the talks
 cursor = cnx.cursor()
@@ -91,15 +101,59 @@ for (order_id, order_year, all_talks, available_talks, fulfillable, complete) in
 		print ("detected USB: " + attached_drive)#shows that a USB has been detected, gives it's letter
 
 
-		#create a file system on the USB deviste that's just been inserted
-		#copy the files from the hard drive to the USB
-		#update the database to say that the order is complete
 
+		#check that the USB has a partition
+		#test that dev/attached_drive exists
+		if not os.path.exists("/dev/" + attached_drive + "1"):
+			#if the file path doesn't exist then exit
+			print ("Partition doesn't exist")
+			sys.exit()
+		#print("mount /dev/{}1 /media/{}".format(attached_drive,attached_drive))
+		#try and mount a file system
+		mount_output = call("/usr/bin/mount /dev/{}1 /media/{} >/root/mountlog 2>/root/mounterr".format(attached_drive,attached_drive), shell=True)
+		if mount_output != 0:
+			print ("Can't mount the file system")
+			sys.exit()		
+
+
+		#check that USB is empty
+		device_info = check_output("/usr/bin/df |/usr/bin/grep {}".format(attached_drive), shell=True).split()
+		#test that value at position 1 is between 7.5m and 8m
+		if int(device_info[1]) <  7500000 or int(device_info[1])> 8000000:
+			print ("USB is wrong size")
+			sys.exit()
+		#and test that the value at position 2 is less than 100
+		if int(device_info[2]) > 100:
+			print("USB is not blank")
+			sys.exit()
+		#test that the value at position 5 is of the form /media/sd		
+		if not re.search("media", check_output("/usr/bin/df | /usr/bin/grep {}".format(attached_drive), shell=True).split()[5]):
+			print("USB is not a USB")
+			sys.exit()
+
+		#copy the files from the hard drive to the USB
+		for talk in all_talks.split(","): #loops over the talks for the order
+			print ("attempting to copy talk " + talk)
+			shutil.copy2(config["upload_dir"].strip() + "/" + talk + "mp3.mp3", "/media/" + attached_drive + "/" + talk + "mp3.mp3" )
+			 #copies across the talk from the host directory (upload dir) to the USB (media)
+			print ("success")
+
+		print ("all talks copied, please wait to remove USB")
+
+
+cursor.close()
+
+#now repoen the cursor
+cursor = cnx.cursor()
+
+#then update the mysql database to say that the order is complete
+query = "update orders set complete = 1 where id = " + orderid
+
+cursor.execute(query)
+cnx.commit()
 cursor.close()
 cnx.close()
 
-
-#simples
-#that was easy
-
+#unmount usb
+#prompt user to remove usb
 	
