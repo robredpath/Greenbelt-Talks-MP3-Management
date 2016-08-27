@@ -26,7 +26,7 @@ use warnings;
 use CGI;
 use CGI::Carp qw ( fatalsToBrowser ); 
 use DBI;
-
+use Template;
 use GB;
 
 my $gb = GB->new("../gb_talks.conf");
@@ -42,7 +42,8 @@ my $gb_long_year = "20$gb_short_year";
 my $sth;
 my $rv;
 
-my ($status_message, $error_message);
+my $status_messages = [];
+my $error_messages = [];
 
 # If there is POST data
 my $post_data = new CGI;
@@ -81,7 +82,6 @@ if ($post_data->param('talk_id') && $post_data->upload('talk_data') && $post_dat
         # Close file
         close TALK;
         
-
 	# Open file for writing with appropriate name
 	my $mp3_filename = "gb$gb_short_year-$padded_talk_id" . "mp3.mp3";
 	warn "$transcode_dir/$mp3_filename";
@@ -105,75 +105,25 @@ if ($post_data->param('talk_id') && $post_data->upload('talk_data') && $post_dat
 	$sth = $dbh->prepare("UPDATE `talks` SET `uploaded`=1 where `id`=? AND `year`=?");
 	$rv = $sth->execute($talk_id, $gb_long_year);
 
-	# email contact to confirm availability (get contact from conf file)
-	$status_message = "Talk uploaded";
+	push $status_messages, "Talk $talk_id uploaded";
 } elsif ($post_data->param('talk_id')) {
-	$error_message = "Both mp3 and snip file are required";
-}
-
-#Set up header
-my $output_html = <<END;
-
-<html>
-<head>
-<link rel="stylesheet" type="text/css" href="gb_talks.css" />
-</head>
-<body>
-<div id="page">
-<div id="header">
-<div id="logo"><img src="gb_logo.png" /></div>
-<h2>Greenbelt Talks - Upload New Talk</h2>
-</div>
-
-END
-
-if($status_message) { 
-$output_html .= <<END;
-<div id="status_message">$status_message </div>
-END
-}
-
-if($error_message) {
-$output_html .= <<END;
-<div id="error_message">$error_message </div>
-END
-
-}
-
-$output_html .= <<END;
-<div id="upload_form">
-<h3>Select a talk to upload below</h3>
-<form action="" method="POST" enctype="multipart/form-data">
-mp3:<input type="file" id="talk_data" name="talk_data"/>
-snip:<input type="file" id="snip_data" name="snip_data"/>
-Talk ID: <select name="talk_id" id="talk_id">
-END
-
-$sth  = $dbh->prepare("SELECT id FROM talks WHERE uploaded = 0");
-$sth->execute;
-my $id;
-while ( ($id) = $sth->fetchrow_array)
-{
-	$output_html .= "<option value='$id'>gb$conf->{'gb_short_year'}-$id</option>"
+	push $error_messages, "Both mp3 and snip file are required";
 }
 
 
-$output_html .= <<END; 
-</select>
-<input type="submit" value="Upload Talk" name="submit"/>
-</form>
-<p>Note that this will only let you upload talks from $gb_long_year - if you're working on anything else, ask Rob for advice</p>
-</div>
+my $non_uploaded_talks = $dbh->selectcol_arrayref("SELECT `id` FROM talks WHERE uploaded = 0");
 
-END
+print $post_data->header;
+my $output_vars = {
+        error_messages => $error_messages,
+	status_messages => $status_messages,
+        gb_short_year => $gb_short_year,
+        talks => $non_uploaded_talks,
+};
+
+my $tt = Template->new({
+        INCLUDE_PATH => '/var/www/templates'
+});
 
 
-#Set up footer
-
-$output_html .= <<END;
-</div>
-</body>
-</html>
-END
-
-print $post_data->header, $output_html;
+$tt->process('upload_talk.tmpl', $output_vars) || die $tt->error();

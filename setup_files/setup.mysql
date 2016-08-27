@@ -10,7 +10,7 @@ CREATE TABLE `talks`(
 `available` INT(1) DEFAULT 0 NOT NULL,
 `priority` INT(2) DEFAULT 10 NOT NULL,
 `uploaded` TINYINT(1) DEFAULT 0 NOT NULL,
-`start_time` DATETIME DEFAULT 0 NOT NULL,
+`start_time` INT(11) DEFAULT 0 NOT NULL,
 PRIMARY KEY (`id`, `year`)
 ) ENGINE = InnoDB;
 

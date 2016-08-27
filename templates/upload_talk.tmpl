@@ -28,11 +28,11 @@
 
 [% END %]
 
-[% IF status_messages && error_messages.size %]
+[% IF status_messages && status_messages.size %]
 
-rdiv id="confirmation" class="green_box">
+<div id="confirmation" class="green_box">
 
-        [% FOREACH message in error_messages %]
+        [% FOREACH message in status_messages %]
 
         <p> [% message %] </p>
 
