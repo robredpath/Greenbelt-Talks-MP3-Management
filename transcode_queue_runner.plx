@@ -131,6 +131,9 @@ if ( $current_transcodes <= $max_transcodes )
 			$return = system("ffmpeg", "-i", $full_talk_wav_filename, "-f", "segment", "-segment_time", 300, "-c", "copy", "$talk_cd_dir/gb$short_year-$padded_talk_id-%02d-cd.wav");
         	        log_it_and_check("CD split", $return);
 
+			# clean up a bit	
+			qx#rm $full_talk_wav_filename#
+
 			# Remove the item from the queue
 			$sth = $dbh->prepare('DELETE FROM transcode_queue where talk_id=?');
 			$sth->execute($talk_id);
