@@ -22,6 +22,9 @@ Copy gb_talks.conf to somewhere non-world-readable, make it readable by your web
 We recommend that these scripts be executed as as reduced-privilege user. 
 Create a database - setup_scripts/ should create the correct schema for the latest version of the scripts
 
+To speed up unmouting USBs:
+echo $((16*1024*1024)) > /proc/sys/vm/dirty_background_bytes
+echo $((48*1024*1024)) > /proc/sys/vm/dirty_bytes
 
 Inputs:-
 The list of talks for the festival - CSV file, parse_talks.plx

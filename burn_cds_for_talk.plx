@@ -17,7 +17,7 @@ my $talk_id = $ARGV[0];
 die "Supply 3 digit talk ID" unless length($talk_id) == 3;
 
 my $talk_cd_dir = $cd_dir . "/gb$short_year-$talk_id";
-chdir($talk_cd_dir);
+chdir($talk_cd_dir) or die "This talk is not ready yet!\n";
 
 foreach my $cd (glob("*")) {
 	next unless -d $cd;

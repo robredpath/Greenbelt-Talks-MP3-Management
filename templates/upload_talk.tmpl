@@ -18,7 +18,7 @@
 
 <p>An error was encountered whilst processing the request:</p>
 
-        [% FOREACH message in error_messages %]
+        [% FOREACH message IN error_messages %]
 
         <p> [% message %] </p>
 
@@ -32,7 +32,7 @@
 
 <div id="confirmation" class="green_box">
 
-        [% FOREACH message in status_messages %]
+        [% FOREACH message IN status_messages %]
 
         <p> [% message %] </p>
 

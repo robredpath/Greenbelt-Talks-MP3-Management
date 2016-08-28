@@ -22,7 +22,8 @@ my $conf = $gb->{conf};
 my $gb_short_year = $1 if $conf->{'gb_short_year'} =~ /(^[0-9]{2}$)/;
 my $gb_long_year = $1 if $conf->{'gb_long_year'} =~ /(^[0-9]{4}$)/;
 my $friday_of_gb_date = $1 if $conf->{'friday_of_gb_date'} =~ /(^[0-9]{2}$)/;
-my $start_of_gb = parsedate("$friday_of_gb_date August $gb_long_year");
+my $thursday_of_gb_date = $friday_of_gb_date-1;
+my $start_of_gb = parsedate("$thursday_of_gb_date August $gb_long_year");
 my $file = $ARGV[0];
 my $csv = Text::CSV->new({
 	sep_char => ',',
@@ -44,6 +45,7 @@ foreach (<CSV>) {
 
 		# Convert the day + time columns to a DateTime
 		my ($sec, $min, $hour, $mday, $mon, undef, undef, undef, undef) = localtime(parsedate("next $day $time", NOW => $start_of_gb));
+		$mon++; # Month starts at 0
 		my $start_time = "$year-$mon-$mday ${hour}:${min}";
 		print "Talk ID: $talk_id Speaker: $speaker Title: $title Day: $day Time: $time Timestamp: $start_time\n";
 		#$sth = $dbh->prepare("INSERT INTO `talks`(`id`,`year`,`speaker`,`title`,`available`,`uploaded`, `start_time`) VALUES (?,?,?,?,0,0,?)");

@@ -6,6 +6,7 @@ BEGIN {
 
 use strict;
 use warnings;
+use POSIX;
 
 #####################################################
 #
@@ -128,11 +129,28 @@ if ( $current_transcodes <= $max_transcodes )
 			{
         			mkdir($talk_cd_dir) or die "Could not create CD per-talk dir";
 			}
-			$return = system("ffmpeg", "-i", $full_talk_wav_filename, "-f", "segment", "-segment_time", 300, "-c", "copy", "$talk_cd_dir/gb$short_year-$padded_talk_id-%02d-cd.wav");
-        	        log_it_and_check("CD split", $return);
+
+			# If the track is longer than 79 mins, split it but warn the user
+			
+			my $talk_length = int(qx#/usr/bin/soxi -D $full_talk_wav_filename#);
+			my $number_of_discs = ceil($talk_length/(79*60));
+                        my $cd_length = $talk_length/$number_of_discs;
+
+			# Split up the full WAV, if necessary, into multiple files
+			$return = system("ffmpeg", "-i", $full_talk_wav_filename, "-f", "segment", "-segment_time", $cd_length, "-segment_start_number", "1", "-c", "copy", "$talk_cd_dir/gb$short_year-$padded_talk_id-fullcd%01d.wav");
+
+			warn "Talk is $talk_length minutes long, preparing for $number_of_discs CDs";
+
+			foreach my $disc (1..$number_of_discs) {
+				mkdir("$talk_cd_dir/cd$disc");
+				$return = system("ffmpeg", "-i", "$talk_cd_dir/gb$short_year-$padded_talk_id-fullcd$disc.wav" , "-f", "segment", "-segment_time", 300, "-c", "copy", "$talk_cd_dir/cd$disc/gb$short_year-$padded_talk_id-%02d-cd$disc.wav");
+                        	log_it_and_check("CD split", $return);
+				# gb16-057-fullcd2.wav
+				qx#/usr/bin/rm $talk_cd_dir/gb$short_year-$padded_talk_id-fullcd$disc.wav# or log_it_and_check("Removal of CD files failed", 1);
+			}
 
 			# clean up a bit	
-			qx#rm $full_talk_wav_filename#
+			qx#/usr/bin/rm $full_talk_wav_filename# or log_it_and_check("Removal of full talk wav failed", "1");
 
 			# Remove the item from the queue
 			$sth = $dbh->prepare('DELETE FROM transcode_queue where talk_id=?');

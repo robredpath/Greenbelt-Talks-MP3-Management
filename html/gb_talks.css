@@ -1,5 +1,5 @@
 #page {
-	position: absolute;
+	position: relative;
 	width: 960px;
 	text-align: center;
 	font-family: sans-serif;
@@ -142,7 +142,7 @@
         position: relative;
         width: 800px;
         text-align: left;
-        background-color: rgb(200,25,200);
+        background-color: rgb(100,255,100);
         padding:10px;
         border: 1px solid rgb(100,255,100);
         margin: 10px;

@@ -111,7 +111,7 @@ if ($post_data->param('talk_id') && $post_data->upload('talk_data') && $post_dat
 }
 
 
-my $non_uploaded_talks = $dbh->selectcol_arrayref("SELECT `id` FROM talks WHERE uploaded = 0");
+my $non_uploaded_talks = $dbh->selectcol_arrayref("SELECT `id` FROM talks WHERE uploaded = 0 AND start_time < NOW()");
 
 print $post_data->header;
 my $output_vars = {
