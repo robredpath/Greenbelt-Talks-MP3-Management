@@ -104,18 +104,29 @@ if ( $current_transcodes <= $max_transcodes )
 		
 			my $talk_title = pop @talk_data;
 			my $talk_speaker = pop @talk_data;
-	
-			# Set up metadata to pass to LAME
-			my @lame_data = ('--id3v2-only', '--tt', $talk_title, '--ta', $talk_speaker, '--tl', "Greenbelt Festival Talks 20$short_year", '--ty', "20$short_year", '--tn', $talk_id);
 
 			# Run the transcode job
 			my $transcode_filename = "$transcode_dir/$mp3_filename" ;
 			my $upload_filename = "$upload_dir/$mp3_filename";
 
 			log_it("Transcode started for $mp3_filename");
-			my $return = system("lame", @lame_params, @lame_data, $transcode_filename, $upload_filename);
+			my $return = system("lame", @lame_params, $transcode_filename, $upload_filename);
 			log_it("Transcode return code: $return");
 			exit if $return != 0; 
+
+			log_it("Adding metadata for $mp3_filename");
+			my @id3v2_tags = ("--TALB", $talk_title, \
+					  "--TCOP", "$long_year Greenbelt Festivals", \
+					  "--TIT2", $talk_title, \
+					  "--TPE1", $talk_speaker, \
+                                          "--TPE2", $talk_speaker, \
+					  "--TRCK", $talk_id, \
+					  "--TDRC", $long_year, \
+					  "--picture", "/var/www/gbtalks_logo.jpg");
+			
+			my $return = system("mid3v2", @id3v2_tags);
+			log_it("Metadata return code: $return");
+                        exit if $return != 0;
 
 			# Now, set up the files for the CD burn
 		
