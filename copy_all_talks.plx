@@ -17,8 +17,9 @@ my $sth;
 my $unavailable_talks = $dbh->selectcol_arrayref("SELECT COUNT(`id`) FROM talks WHERE available=0");
 die "Not all talks are available! Quitting!" unless $unavailable_talks->[0] == 0;
 
+print "Copying all talks to RAM";
 # copy all the talks to the RAMdisk
-qx|mkdir /dev/shm/GBTALKS; cp -a /var/www/upload/*mp3.mp3 /dev/shm/GBTALKS|;
+qx|mkdir /dev/shm/GBTALKS; cp -a /var/www/upload/*mp3.mp3 /dev/shm/GBTALKS; cp -a /var/www/upload/*.pdf /dev/shm/GBTALKS|;
 
 my $number_of_disks = $ARGV[0];
 my @attached_drives = ();
@@ -58,7 +59,7 @@ while ($initial_dmesg_timestamp == $current_dmesg_timestamp) {
 		print "Detected drive: $attached_drive \n";
 		
 		# Mount the disk
-		qx#/usr/bin/mount /dev/${attached_drive}1 /media/$attached_drive#;
+		qx#/usr/bin/mount /dev/${attached_drive}1 /media/$attached_drive -o flush#;
 		
 		# Check that the disk is empty
 		my $df_output = qx#/usr/bin/df | grep ${attached_drive}1#;

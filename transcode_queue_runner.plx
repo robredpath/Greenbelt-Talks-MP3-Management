@@ -66,20 +66,20 @@ my $current_transcodes = $1 if `ls /var/run/gb_transcode* | wc -l` =~ /([0-9]+)/
 
 if (! -e $transcode_dir)
 {
-	mkdir($transcode_dir) or die "Could not create transcode dir";
+	mkdir($transcode_dir) or log_it_and_check("Could not create transcode dir",1);
 }
 
 if ( $current_transcodes <= $max_transcodes )
 {
 	# Get the next talk to transcode - highest priority first, oldest first. We can assume that we're only transcoding talks from this year.
-	$sth = $dbh->prepare("SELECT talk_id FROM transcode_queue ORDER BY priority DESC, sequence DESC LIMIT ?");
+	$sth = $dbh->prepare("SELECT talk_id FROM transcode_queue ORDER BY priority DESC, sequence ASC LIMIT ?");
 	$sth->execute($current_transcodes);
 	my @queue;
 	while (my @data = $sth->fetchrow_array)
 	{
 		push @queue, $data[0]; 
 	}
-	if(scalar @queue>0) {
+	if(scalar @queue  == $current_transcodes) {
 		my $talk_pos = $current_transcodes-1;
 		my $talk_id = $queue[$talk_pos];
 		warn $talk_pos;
@@ -146,11 +146,12 @@ if ( $current_transcodes <= $max_transcodes )
 				$return = system("ffmpeg", "-i", "$talk_cd_dir/gb$short_year-$padded_talk_id-fullcd$disc.wav" , "-f", "segment", "-segment_time", 300, "-c", "copy", "$talk_cd_dir/cd$disc/gb$short_year-$padded_talk_id-%02d-cd$disc.wav");
                         	log_it_and_check("CD split", $return);
 				# gb16-057-fullcd2.wav
-				qx#/usr/bin/rm $talk_cd_dir/gb$short_year-$padded_talk_id-fullcd$disc.wav# or log_it_and_check("Removal of CD files failed", 1);
+				log_it("$talk_cd_dir/gb$short_year-$padded_talk_id-fullcd$disc.wav");
+				qx#/usr/bin/rm -f $talk_cd_dir/gb$short_year-$padded_talk_id-fullcd$disc.wav#;
 			}
 
 			# clean up a bit	
-			qx#/usr/bin/rm $full_talk_wav_filename# or log_it_and_check("Removal of full talk wav failed", "1");
+			qx#/usr/bin/rm $full_talk_wav_filename#;
 
 			# Remove the item from the queue
 			$sth = $dbh->prepare('DELETE FROM transcode_queue where talk_id=?');
