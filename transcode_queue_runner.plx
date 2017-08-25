@@ -93,15 +93,17 @@ if ( $current_transcodes <= $max_transcodes )
 			$0 = "transcode_queue_runner.plx - $mp3_filename";	
 	
 			# Get the metadata
-			$sth = $dbh->prepare("SELECT speaker, title FROM talks WHERE id=?");
+			$sth = $dbh->prepare("SELECT speaker, title, description FROM talks WHERE id=?");
 			$sth->execute($talk_id);
 			my @talk_data;
 			while (my @data = $sth->fetchrow_array)
 	        	{
         	        	push @talk_data, $data[0];
 				push @talk_data, $data[1];
+				push @talk_data, $data[2];
 	        	}
 		
+			my $talk_description = pop @talk_data;
 			my $talk_title = pop @talk_data;
 			my $talk_speaker = pop @talk_data;
 
@@ -115,16 +117,18 @@ if ( $current_transcodes <= $max_transcodes )
 			exit if $return != 0; 
 
 			log_it("Adding metadata for $mp3_filename");
-			my @id3v2_tags = ("--TALB", $talk_title, \
-					  "--TCOP", "$long_year Greenbelt Festivals", \
-					  "--TIT2", $talk_title, \
-					  "--TPE1", $talk_speaker, \
-                                          "--TPE2", $talk_speaker, \
-					  "--TRCK", $talk_id, \
-					  "--TDRC", $long_year, \
-					  "--picture", "/var/www/gbtalks_logo.jpg");
+			my @id3v2_tags = ("--TALB", "$talk_title", 
+					  "--TCOP", "$gb_long_year Greenbelt Festivals", 
+					  "--TIT2", "$talk_title", 
+					  "--TPE1", "$talk_speaker", 
+                                          "--TPE2", "$talk_speaker", 
+					  "--TRCK", "$talk_id", 
+					  "--TDRC", "$gb_long_year", 
+					  "--COMM", "$talk_description", 
+					  "--picture", "/var/www/gtalks_logo.png");
 			
-			my $return = system("mid3v2", @id3v2_tags);
+			log_it("mid3v2 command: @id3v2_tags");
+			$return = system("mid3v2", @id3v2_tags, $upload_filename);
 			log_it("Metadata return code: $return");
                         exit if $return != 0;
 

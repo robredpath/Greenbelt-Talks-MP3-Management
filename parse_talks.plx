@@ -38,18 +38,19 @@ foreach (<CSV>) {
 		my @columns = $csv->fields();
 		my (undef, $talk_id) = split(/-/, $columns[0]);
 		my $year = $gb_long_year;
-		my $speaker = $columns[5];
-		my $title = $columns[4];
-		my $day = $columns[2];
-		my $time = $columns[3];
+		my $speaker = $columns[4];
+		my $title = $columns[3];
+		my $day = $columns[1];
+		my $time = $columns[2];
+		my $description = $columns[5];
 
 		# Convert the day + time columns to a DateTime
 		my ($sec, $min, $hour, $mday, $mon, undef, undef, undef, undef) = localtime(parsedate("next $day $time", NOW => $start_of_gb));
 		$mon++; # Month starts at 0
 		my $start_time = "$year-$mon-$mday ${hour}:${min}";
 		print "Talk ID: $talk_id Speaker: $speaker Title: $title Day: $day Time: $time Timestamp: $start_time\n";
-		#$sth = $dbh->prepare("INSERT INTO `talks`(`id`,`year`,`speaker`,`title`,`available`,`uploaded`, `start_time`) VALUES (?,?,?,?,0,0,?)");
-		#$sth->execute($talk_id, $year, $speaker, $title, $start_time);
+		$sth = $dbh->prepare("INSERT INTO `talks`(`id`,`year`,`speaker`,`title`,`description`, `available`,`uploaded`, `start_time`) VALUES (?,?,?,?,?,0,0,?)");
+		$sth->execute($talk_id, $year, $speaker, $title, $description, $start_time);
 		#
 		$sth = $dbh->prepare("UPDATE `talks` SET start_time=? WHERE id=?");
 		$sth->execute($start_time, $talk_id);
