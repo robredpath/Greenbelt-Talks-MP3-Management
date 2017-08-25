@@ -2,20 +2,21 @@ DROP DATABASE IF EXISTS `gb_talks`;
 CREATE DATABASE `gb_talks`;
 USE `gb_talks`;
 
-CREATE TABLE `talks`(
-`id` INT(3) NOT NULL,
-`year`YEAR(4) NOT NULL,
-`speaker` VARCHAR(255) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
-`title` VARCHAR(255) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
-`available` INT(1) DEFAULT 0 NOT NULL,
-`priority` INT(2) DEFAULT 10 NOT NULL,
-`uploaded` TINYINT(1) DEFAULT 0 NOT NULL,
-`start_time` INT(11) DEFAULT 0 NOT NULL,
-PRIMARY KEY (`id`, `year`)
-) ENGINE = InnoDB;
+CREATE TABLE `talks` (
+  `id` int(3) NOT NULL,
+  `year` year(4) NOT NULL,
+  `speaker` varchar(255) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
+  `title` varchar(255) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
+  `available` int(1) NOT NULL DEFAULT '0',
+  `priority` int(2) NOT NULL DEFAULT '10',
+  `uploaded` tinyint(1) NOT NULL DEFAULT '0',
+  `start_time` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `description` varchar(1024) NOT NULL,
+  PRIMARY KEY (`id`,`year`)
+) ENGINE=InnoDB
 
 CREATE TABLE `orders` (
-`id` INT(3) NOT NULL,
+`id` INT(8) NOT NULL,
 `year` YEAR(4) NOT NULL,
 `complete` TINYINT(1) NOT NULL DEFAULT 0,
 `additional_talks` TEXT DEFAULT NULL,
@@ -23,7 +24,7 @@ PRIMARY KEY (`id`, `year`)
 ) ENGINE = InnoDB;
 
 CREATE TABLE `order_items` (
- `order_id` INT(3) NOT NULL,
+ `order_id` INT(8) NOT NULL,
  `order_year` YEAR(4) NOT NULL,
  `talk_id` INT(3) NOT NULL,
  `talk_year` YEAR(4) NOT NULL,
