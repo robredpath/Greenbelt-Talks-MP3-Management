@@ -117,14 +117,15 @@ if ( $current_transcodes <= $max_transcodes )
 			exit if $return != 0; 
 
 			log_it("Adding metadata for $mp3_filename");
-			my @id3v2_tags = ("--TALB", "$talk_title", 
+			my @id3v2_tags = ("--TALB", "Greenbelt Festival Talks 2017", 
 					  "--TCOP", "$gb_long_year Greenbelt Festivals", 
 					  "--TIT2", "$talk_title", 
 					  "--TPE1", "$talk_speaker", 
                                           "--TPE2", "$talk_speaker", 
 					  "--TRCK", "$talk_id", 
 					  "--TDRC", "$gb_long_year", 
-					  "--COMM", "$talk_description", 
+					  "--COMM", "$talk_description",
+					  "--TCMP", "1", 
 					  "--picture", "/var/www/gtalks_logo.png");
 			
 			log_it("mid3v2 command: @id3v2_tags");
@@ -171,8 +172,8 @@ if ( $current_transcodes <= $max_transcodes )
 			# Remove the item from the queue
 			$sth = $dbh->prepare('DELETE FROM transcode_queue where talk_id=?');
 			$sth->execute($talk_id);
-			$sth = $dbh->prepare('INSERT INTO upload_queue(priority, talk_id, talk_year) VALUES (?,?,?)');
-			$sth->execute(2,$talk_id,$gb_long_year);
+			#$sth = $dbh->prepare('INSERT INTO upload_queue(priority, talk_id, talk_year) VALUES (?,?,?)');
+			#$sth->execute(2,$talk_id,$gb_long_year);
 			$sth = $dbh->prepare('UPDATE talks SET available=1 WHERE id=? AND year=?');
 			$sth->execute($talk_id, $gb_long_year);
 		} else {

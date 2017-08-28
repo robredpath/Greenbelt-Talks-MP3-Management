@@ -19,7 +19,7 @@ die "Not all talks are available! Quitting!" unless $unavailable_talks->[0] == 0
 
 print "Copying all talks to RAM";
 # copy all the talks to the RAMdisk
-qx|mkdir /dev/shm/GBTALKS; cp -a /var/www/upload/*mp3.mp3 /dev/shm/GBTALKS; cp -a /var/www/upload/*.pdf /dev/shm/GBTALKS|;
+qx|mkdir /dev/shm/GBTALKS; cp -a /var/www/upload/gb${short_year}-*mp3.mp3 /dev/shm/GBTALKS; cp -a /var/www/upload/*${short_year}*.pdf /dev/shm/GBTALKS|;
 
 my $number_of_disks = $ARGV[0];
 my @attached_drives = ();

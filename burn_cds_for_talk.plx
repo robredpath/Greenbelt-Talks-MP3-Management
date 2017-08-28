@@ -19,6 +19,9 @@ die "Supply 3 digit talk ID" unless length($talk_id) == 3;
 my $talk_cd_dir = $cd_dir . "/gb$short_year-$talk_id";
 chdir($talk_cd_dir) or die "This talk is not ready yet!\n";
 
+my (undef, undef, undef, undef, undef, undef, undef, undef, $atime,$mtime,$ctime,undef,undef) = stat($talk_cd_dir);
+$mtime < time - 60 or die "Please wait a minute";
+
 foreach my $cd (glob("*")) {
 	next unless -d $cd;
 	print "Insert CDs for next disk, then press Enter when ready:";
