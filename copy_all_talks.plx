@@ -14,11 +14,17 @@ my $upload_dir = $conf->{'upload_dir'};
 my $short_year = $conf->{'gb_short_year'};
 
 my $sth;
+
+
+# TODO: Capture a 'partial' flag which will trigger a partial run
+# TODO: 
+
+
 my $unavailable_talks = $dbh->selectcol_arrayref("SELECT COUNT(`id`) FROM talks WHERE available=0");
 die "Not all talks are available! Quitting!" unless $unavailable_talks->[0] == 0;
 
 print "Copying all talks to RAM";
-# copy all the talks to the RAMdisk
+# copy all the talks that are available to the RAMdisk
 qx|mkdir /dev/shm/GBTALKS; cp -a /var/www/upload/gb${short_year}-*mp3.mp3 /dev/shm/GBTALKS; cp -a /var/www/upload/*${short_year}*.pdf /dev/shm/GBTALKS|;
 
 my $number_of_disks = $ARGV[0];
@@ -83,6 +89,9 @@ foreach my $drive (@attached_drives) {
 	$pm->start and next;
 	print "starting copy to $drive\n";
 	qx#MTOOLS_SKIP_CHECK=1 /usr/bin/mlabel -i /dev/${drive}1 ::GREENBELT#;
+
+	# TODO: If we're on a partial run, 
+
 	qx#cp -a /dev/shm/GBTALKS/* /media/$drive#;
 	qx#/usr/bin/umount /media/$drive#;
 	print "done copying to $drive\n";

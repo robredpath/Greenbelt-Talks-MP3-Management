@@ -1,8 +1,6 @@
 #!/usr/bin/python
 
 import mysql.connector
-#read in the command line argument
-
 import sys
 from subprocess import check_output, call # creates a new command in this program which is loaded from an external subprocess
 #this is in there so we can use Dmesg to check for the USB
@@ -16,14 +14,15 @@ orderid = sys.argv[1] #this takes the order number from the user input and assig
 
 #get the list of talks for that order from the database
 
-#open the configureation file
+#open the configuration file
 config_file = open('/var/www/gb_talks.conf')
 
 #parse the config file 
 config = dict([line.split("=") for line in config_file])#this creates a dictionary with the configuration stuff in it
 
 
-cnx = mysql.connector.connect(user=config["mysql_user"].strip(), password=config["mysql_pass"].strip(),
+cnx = mysql.connector.connect(user=config["mysql_user"].strip(), 
+                              password=config["mysql_pass"].strip(),
                               host=config["mysql_host"].strip(),
                               database=config["mysql_db"].strip())
 

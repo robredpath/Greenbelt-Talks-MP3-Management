@@ -117,7 +117,7 @@ if ( $current_transcodes <= $max_transcodes )
 			exit if $return != 0; 
 
 			log_it("Adding metadata for $mp3_filename");
-			my @id3v2_tags = ("--TALB", "Greenbelt Festival Talks 2017", 
+			my @id3v2_tags = ("--TALB", "Greenbelt Festival Talks $gb_long_year", 
 					  "--TCOP", "$gb_long_year Greenbelt Festivals", 
 					  "--TIT2", "$talk_title", 
 					  "--TPE1", "$talk_speaker", 
