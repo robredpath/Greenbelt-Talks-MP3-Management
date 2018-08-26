@@ -29,7 +29,7 @@ my $transcode_dir = $conf->{'transcode_dir'};
 my $cd_dir = $conf->{'cd_dir'};
 
 my $sth;
-my @lame_params = ("--abr",  192, "-q2", "--mp3input", "-S", "-m", "j", "-c");
+my @lame_params = ("--abr",  192, "-q0", "--mp3input", "-S", "-m", "j", "-c");
 my $short_year = $conf->{'gb_short_year'};
 my $gb_long_year = "20$short_year";
 
@@ -79,7 +79,7 @@ if ( $current_transcodes <= $max_transcodes )
 	{
 		push @queue, $data[0]; 
 	}
-	if(scalar @queue  == $current_transcodes) {
+	if(scalar @queue >= $current_transcodes) {
 		my $talk_pos = $current_transcodes-1;
 		my $talk_id = $queue[$talk_pos];
 		warn $talk_pos;
