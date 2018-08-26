@@ -2,6 +2,9 @@
 
 use strict;
 use warnings;
+use open IO => ':utf8';
+
+binmode STDOUT, ':utf8';
 
 BEGIN {
         push @INC, '.', '..';
@@ -12,6 +15,7 @@ use Text::CSV;
 use Data::Dumper;
 use DateTime;
 use Time::ParseDate;
+use HTML::Entities;
 
 use GB;
 
@@ -30,25 +34,28 @@ my $csv = Text::CSV->new({
 	binary => 1
 });
 
-open (CSV, "<", $file) or die $!;
+open (CSV, "<:encoding(UTF-8)", $file) or die $!;
 my $sth;
 foreach (<CSV>) {
 	if ($csv->parse($_)) {
 		# Number,Venue Name,Date,Start time,Name,Lineup,Record,Public Description,Show Types,,
 		my @columns = $csv->fields();
-		my (undef, $talk_id) = split(/-/, $columns[0]);
+		#my (undef, $talk_id) = split(/-/, $columns[0]);
+		my $talk_id = $columns[0];
 		my $year = $gb_long_year;
-		my $speaker = $columns[4];
-		my $title = $columns[3];
-		my $day = $columns[1];
-		my $time = $columns[2];
-		my $description = $columns[5];
+		my $speaker = $columns[8];
+		my $title = $columns[7];
+		my $day = $columns[6];
+		my $time = $columns[5];
+		my $description = $columns[9];
+
+		decode_entities($description);
 
 		# Convert the day + time columns to a DateTime
 		my ($sec, $min, $hour, $mday, $mon, undef, undef, undef, undef) = localtime(parsedate("next $day $time", NOW => $start_of_gb));
 		$mon++; # Month starts at 0
 		my $start_time = "$year-$mon-$mday ${hour}:${min}";
-		print "Talk ID: $talk_id Speaker: $speaker Title: $title Day: $day Time: $time Timestamp: $start_time\n";
+		print "Talk ID: $talk_id \n Speaker: $speaker \n Title: $title \n Description: $description \n Day: $day Time: $time Timestamp: $start_time\n";
 		$sth = $dbh->prepare("INSERT INTO `talks`(`id`,`year`,`speaker`,`title`,`description`, `available`,`uploaded`, `start_time`) VALUES (?,?,?,?,?,0,0,?)");
 		$sth->execute($talk_id, $year, $speaker, $title, $description, $start_time);
 		#

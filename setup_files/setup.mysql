@@ -13,7 +13,7 @@ CREATE TABLE `talks` (
   `start_time` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
   `description` varchar(4096) NOT NULL,
   PRIMARY KEY (`id`,`year`)
-) ENGINE=InnoDB
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `orders` (
 `id` INT(8) NOT NULL,
@@ -21,7 +21,7 @@ CREATE TABLE `orders` (
 `complete` TINYINT(1) NOT NULL DEFAULT 0,
 `additional_talks` TEXT DEFAULT NULL,
 PRIMARY KEY (`id`, `year`)
-) ENGINE = InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `order_items` (
  `order_id` INT(8) NOT NULL,
@@ -39,7 +39,7 @@ CONSTRAINT `fk_order_items_order`
 	REFERENCES `orders`(`id`, `year`) 
 	ON DELETE RESTRICT 
 	ON UPDATE CASCADE
-) ENGINE = InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `upload_queue` (
 `sequence` INT(3) PRIMARY KEY NOT NULL AUTO_INCREMENT,
@@ -51,7 +51,7 @@ CONSTRAINT `fk_upload_queue_talk`
         REFERENCES `talks`(`id`,`year`)
         ON DELETE CASCADE
         ON UPDATE RESTRICT)
-ENGINE = InnoDB;
+ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `transcode_queue` (
 `sequence` INT(3) PRIMARY KEY NOT NULL AUTO_INCREMENT,
@@ -63,5 +63,5 @@ CONSTRAINT `fk_transcode_queue_talk`
         REFERENCES `talks`(`id`,`year`)
         ON DELETE CASCADE
         ON UPDATE RESTRICT)
-ENGINE = InnoDB;
+ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

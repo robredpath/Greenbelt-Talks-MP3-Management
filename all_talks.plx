@@ -10,6 +10,7 @@ $SIG{'INT'} = sub {
 use strict;
 use warnings;
 use Parallel::ForkManager;
+#use IPC::System::Simple qw(run);
 
 use GB;
 
@@ -18,7 +19,7 @@ my $conf = $gb->{conf};
 
 my $dbh = $gb->{db};
 my $unavailable_talks = $dbh->selectcol_arrayref("SELECT COUNT(`id`) FROM talks WHERE available=0");
-if ($unavailable_talks->[0] == 0) {
+if (! $unavailable_talks->[0] == 0) {
 
 	print "****NOT ALL TALKS AVAILABLE - STARTING PARTIAL COPY****\n";
 
@@ -32,7 +33,7 @@ if ($unavailable_talks->[0] == 0) {
 my $upload_dir = $conf->{'upload_dir'};
 my $short_year = $conf->{'gb_short_year'};
 
-my $pm = new Parallel::ForkManager(5);
+my $pm = new Parallel::ForkManager(50);
 
 print "Copying all talks to RAM\n";
 # copy all the talks that are available to the RAMdisk
@@ -61,9 +62,15 @@ foreach my $id (1..100) {
 		# Work out the drive letter, then check that it's got a drive
                 my $error;
 		$dmesg_output =~ /\[(sd[a-z]+)\]/ and $attached_drive = $1;
-                warn "No dir in /media for $attached_drive \n" and $error = 1 unless -d "/media/$attached_drive";
+		-d "/media/$attached_drive" or 
+			print "[USB #id] FAILED - No dir in /media for $attached_drive." and
+			next OUTER;
                 print "[USB #$id] Detected drive: $attached_drive\n";
-                qx#/usr/bin/mount /dev/${attached_drive}1 /media/$attached_drive -o flush#;
+                qx#/usr/bin/mount /dev/${attached_drive}1 /media/$attached_drive -o flush#;  
+		if ($? != 0 ) {
+			print "[USB #$id] FAILED - Unable to mount USB. Remove USB - it may be bad\n";
+			next OUTER;
+		}
 
 		# Die if there's a problem here
 		if ($error) {
@@ -76,9 +83,19 @@ foreach my $id (1..100) {
 	$pm->start and next;
 	print "[USB #$id] Starting copy\n";
         qx#MTOOLS_SKIP_CHECK=1 /usr/bin/mlabel -i /dev/${attached_drive}1 ::GREENBELT#;
-	qx#rsync -a /dev/shm/GBTALKS/* /media/$attached_drive#;
-        qx#/usr/bin/umount /media/$attached_drive#;
-        print "[USB #$id] Done - Remove drive\n";
+	if ($? != 0 ) { 
+		print "[USB #$id] FAILED - unable to change drive name\n";
+	} else {
+		qx#rsync -a /dev/shm/GBTALKS/* /media/$attached_drive#;
+		if ($? != 0 ) { 
+			print "[USB #$id] FAILED - rsync failed\n";
+		}
+	}
+       	qx#/usr/bin/umount /media/$attached_drive#;
+		if ($? != 0 ) {
+			print "[USB #$id] FAILED - unable to unmount drive\n";
+		}
+        print "[USB #$id] Remove drive\n";
 
         $pm->finish;	
 }
